@@ -51,18 +51,6 @@ const initialState = {
   simklTrendingPeriods: [],
   simklBestFilters: [],
   simklAnimeTypes: [],
-  traktEnabled: false,
-  traktGenres: [],
-  traktListTypes: [],
-  traktPeriods: [],
-  traktCalendarTypes: [],
-
-  traktShowStatuses: [],
-  traktCertificationsMovie: [],
-  traktCertificationsSeries: [],
-  traktCommunityMetrics: [],
-  traktNetworks: [],
-  traktHasKey: false,
   loading: false,
   error: null,
 };
@@ -76,7 +64,6 @@ function reducer(state, action) {
       const anilistData = action.payload.anilist || {};
       const malData = action.payload.mal || {};
       const simklData = action.payload.simkl || {};
-      const traktData = action.payload.trakt || {};
       return {
         ...state,
         genres: action.payload.genres || initialState.genres,
@@ -132,19 +119,6 @@ function reducer(state, action) {
         simklTrendingPeriods: simklData.trendingPeriods || [],
         simklBestFilters: simklData.bestFilters || [],
         simklAnimeTypes: simklData.animeTypes || [],
-        // Trakt data
-        traktEnabled: traktData.enabled || false,
-        traktGenres: traktData.genres || [],
-        traktListTypes: traktData.listTypes || [],
-        traktPeriods: traktData.periods || [],
-        traktCalendarTypes: traktData.calendarTypes || [],
-
-        traktShowStatuses: traktData.showStatuses || [],
-        traktCertificationsMovie: traktData.certificationsMovie || [],
-        traktCertificationsSeries: traktData.certificationsSeries || [],
-        traktCommunityMetrics: traktData.communityMetrics || [],
-        traktNetworks: traktData.networks || [],
-        traktHasKey: traktData.hasKey || false,
         loading: false,
         error: null,
       };
@@ -414,26 +388,6 @@ export function useTMDB(apiKey) {
     [hasAuth]
   );
 
-  const previewTrakt = useCallback(
-    async (
-      type,
-      filters,
-      previewPosterProvider = null,
-      previewPosterApiKey = null,
-      previewPosterCustomUrlPattern = null
-    ) => {
-      if (!hasAuth) throw new Error('Authentication required');
-      return api.previewTraktCatalog(
-        type,
-        filters,
-        previewPosterProvider,
-        previewPosterApiKey,
-        previewPosterCustomUrlPattern
-      );
-    },
-    [hasAuth]
-  );
-
   const searchImdb = useCallback(
     async (query, type, limit) => {
       if (!hasAuth) throw new Error('Authentication required');
@@ -488,7 +442,6 @@ export function useTMDB(apiKey) {
     previewMal,
     previewKitsu,
     previewSimkl,
-    previewTrakt,
     searchImdb,
     searchImdbPeople,
     searchImdbCompanies,

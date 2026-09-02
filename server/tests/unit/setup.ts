@@ -11,8 +11,6 @@ for (const key of [
   'IMDB_DATA_KEY',
   'MAL_CLIENT_ID',
   'SIMKL_CLIENT_ID',
-  'TRAKT_CLIENT_ID',
-  'TRAKT_CLIENT_SECRET',
 ]) {
   process.env[key] = '';
 }

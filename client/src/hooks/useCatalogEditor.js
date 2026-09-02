@@ -9,16 +9,28 @@ import { PRESET_DATE_MAP } from '../constants/datePresets';
 
 function withRestoredPreset(catalog) {
   if (!catalog) return DEFAULT_CATALOG;
-  const filters = catalog.filters || {};
-  if (!filters.datePreset) return catalog;
-  const isMovie = catalog.type === 'movie';
+  const isTrakt =
+    catalog.source === 'trakt' ||
+    catalog.wasConvertedFromTrakt ||
+    Object.keys(catalog.filters || {}).some((k) => k.startsWith('trakt'));
+  let normalizedCatalog = catalog;
+  if (isTrakt) {
+    normalizedCatalog = {
+      ...catalog,
+      source: 'tmdb',
+      wasConvertedFromTrakt: true,
+    };
+  }
+  const filters = normalizedCatalog.filters || {};
+  if (!filters.datePreset) return normalizedCatalog;
+  const isMovie = normalizedCatalog.type === 'movie';
   const fromKey = isMovie ? 'releaseDateFrom' : 'airDateFrom';
   const toKey = isMovie ? 'releaseDateTo' : 'airDateTo';
-  if (filters[fromKey] && filters[toKey]) return catalog;
+  if (filters[fromKey] && filters[toKey]) return normalizedCatalog;
   const dates = PRESET_DATE_MAP[filters.datePreset];
-  if (!dates) return catalog;
+  if (!dates) return normalizedCatalog;
   return {
-    ...catalog,
+    ...normalizedCatalog,
     filters: {
       ...filters,
       [fromKey]: filters[fromKey] || dates.from,
@@ -94,19 +106,6 @@ export function useCatalogEditor() {
     simklTrendingPeriods = [],
     simklBestFilters = [],
     simklAnimeTypes = [],
-    // Trakt sources
-    previewTrakt: onPreviewTrakt,
-    traktGenres = [],
-    traktListTypes = [],
-    traktPeriods = [],
-    traktCalendarTypes = [],
-
-    traktShowStatuses = [],
-    traktCertificationsMovie = [],
-    traktCertificationsSeries = [],
-    traktCommunityMetrics = [],
-    traktNetworks = [],
-    traktHasKey = false,
   } = useTMDBData();
   const { addToast } = useAppActions();
 
@@ -324,10 +323,6 @@ export function useCatalogEditor() {
     simklBestFilters,
     simklSortOptions,
     simklAnimeTypes,
-    traktListTypes,
-    traktCalendarTypes,
-    traktCommunityMetrics,
-    traktNetworks,
   });
 
   const tvNetworkOptions = useMemo(() => {
@@ -440,20 +435,6 @@ export function useCatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
-
-    // Trakt sources
-    onPreviewTrakt,
-    traktGenres,
-    traktListTypes,
-    traktPeriods,
-    traktCalendarTypes,
-
-    traktShowStatuses,
-    traktCertificationsMovie,
-    traktCertificationsSeries,
-    traktCommunityMetrics,
-    traktNetworks,
-    traktHasKey,
 
     selectedPeople,
     setSelectedPeople,

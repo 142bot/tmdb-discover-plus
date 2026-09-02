@@ -107,7 +107,10 @@ export async function imdbFetch(
   }
 
   const ep = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const isLocalhost = apiHost.startsWith('localhost') || apiHost.startsWith('127.0.0.1');
+  const isLocalhost =
+    apiHost.startsWith('localhost') ||
+    apiHost.startsWith('127.0.0.1') ||
+    apiHost.startsWith('imdb-api');
   const protocol = isLocalhost ? 'http' : 'https';
   const url = new URL(`${protocol}://${apiHost}${ep}`);
 

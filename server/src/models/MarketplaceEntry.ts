@@ -25,7 +25,7 @@ const marketplaceEntrySchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'trakt', 'kitsu'],
+      enum: ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'kitsu', 'trakt'],
       required: true,
       index: true,
     },

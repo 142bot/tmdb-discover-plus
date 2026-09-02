@@ -205,6 +205,10 @@ async function _tmdbFetchInner(url: URL, cacheKey: string, retries: number): Pro
       try {
         response = await fetch(url.toString(), {
           signal: abortController.signal as RequestInit['signal'],
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'TMDB-Discover-Plus/2.10.5',
+          },
         });
       } finally {
         clearTimeout(timeoutId);
@@ -302,7 +306,9 @@ async function _tmdbFetchInner(url: URL, cacheKey: string, retries: number): Pro
       lastError!.code === 'ECONNRESET' ||
       lastError!.code === 'ETIMEDOUT' ||
       lastError!.name === 'FetchError' ||
-      lastError!.name === 'AbortError');
+      lastError!.name === 'AbortError' ||
+      lastError!.name === 'TypeError' ||
+      lastError!.message.includes('fetch failed'));
   if (!isAuthError && !isTransientNetworkError) {
     try {
       await cache.setError(cacheKey, errorType, lastError!.message);

@@ -7,9 +7,9 @@ const SOURCES = [
   { id: 'tmdb', desc: 'Standard TMDB discovery', alwaysVisible: true },
   { id: 'imdb', desc: 'IMDb metadata & lists', enabledKey: 'imdbEnabled' },
   { id: 'anilist', desc: 'AniList anime database', alwaysVisible: true },
+  { id: 'mal', desc: 'MyAnimeList ranking & seasonals', alwaysVisible: true },
   { id: 'kitsu', desc: 'Kitsu anime catalogs', alwaysVisible: true },
   { id: 'simkl', desc: 'Simkl anime discovery', alwaysVisible: true },
-  { id: 'trakt', desc: 'Trakt movie & TV discovery', alwaysVisible: true },
 ];
 
 export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false }) {
@@ -70,7 +70,6 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
     mal: 'e.g., MAL Top Ranked, Seasonal Anime',
     kitsu: 'e.g., Kitsu Trending, Top Rated Anime',
     simkl: 'e.g., Trending Anime, Best of 2024',
-    trakt: 'e.g., Trending Movies, Most Watched',
   };
 
   return (

@@ -5,7 +5,6 @@ export const TIMEOUTS = {
   ANILIST_FETCH_MS: 10_000,
   MAL_FETCH_MS: 10_000,
   SIMKL_FETCH_MS: 10_000,
-  TRAKT_FETCH_MS: 10_000,
   KITSU_FETCH_MS: 10_000,
   NOMINATIM_FETCH_MS: 8_000,
   RPDB_FETCH_MS: 1_500,
@@ -125,8 +124,8 @@ export const MARKETPLACE_SOURCES = [
   'anilist',
   'mal',
   'simkl',
-  'trakt',
   'kitsu',
+  'trakt',
 ] as const;
 export type MarketplaceSource = (typeof MARKETPLACE_SOURCES)[number];
 
@@ -143,7 +142,6 @@ export const MARKETPLACE_SECRET_DENYLIST = [
   'tmdbApiKeyEncrypted',
   'malClientIdEncrypted',
   'simklApiKeyEncrypted',
-  'traktClientIdEncrypted',
   'apiKey',
   'apiKeys',
   'clientId',

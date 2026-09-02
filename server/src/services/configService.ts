@@ -27,7 +27,6 @@ export {
   decryptTmdbApiKey,
   decryptMalClientId,
   decryptSimklApiKey,
-  decryptTraktClientId,
   decryptArtworkKey,
 } from './configEncryption.ts';
 
@@ -38,7 +37,6 @@ import {
   decryptArtworkKey,
   decryptMalClientId,
   decryptSimklApiKey,
-  decryptTraktClientId,
 } from './configEncryption.ts';
 import {
   saveUserConfig as persistToStorage,
@@ -168,20 +166,6 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
     mergedConfig = configWithoutSimklApiKey;
   }
 
-  // Encrypt Trakt Client ID if provided as raw value
-  if (mergedConfig.traktClientId) {
-    const safeKey = sanitizeString(mergedConfig.traktClientId, 128);
-    if (safeKey) {
-      try {
-        mergedConfig.traktClientIdEncrypted = encrypt(safeKey) ?? undefined;
-      } catch (err) {
-        log.error('Failed to encrypt Trakt Client ID', { error: (err as Error).message });
-      }
-    }
-    const { traktClientId: _rawTraktClientId, ...configWithoutTraktClientId } = mergedConfig;
-    mergedConfig = configWithoutTraktClientId;
-  }
-
   // Encrypt global artwork API keys
   if (mergedConfig.preferences?.apiKeys) {
     mergedConfig.preferences.apiKeysEncrypted = mergedConfig.preferences.apiKeysEncrypted || {};
@@ -216,8 +200,11 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
       cleanFilters.watchMonetizationType = cleanFilters.watchMonetizationType[0] || undefined;
     }
 
+    const effectiveSource = c.source === 'trakt' ? 'tmdb' : c.source || 'tmdb';
+
     return {
       ...c,
+      source: effectiveSource,
       _id: c._id || c.id || crypto.randomUUID(),
       filters: cleanFilters,
     };
@@ -281,7 +268,7 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
             const requiresApiKey = artworkProviderRequiresApiKey(providerForValidation);
 
             if (sourceConfig.customUrlPattern) {
-              const safePattern = sanitizeString(sourceConfig.customUrlPattern, 2000).trim();
+              const safePattern = sanitizeString(sourceConfig.customUrlPattern, 5000).trim();
               (settings[ct] as Record<string, ArtworkSourceConfig>)[kind].customUrlPattern =
                 safePattern || undefined;
             }
@@ -348,7 +335,7 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
           const requiresApiKey = artworkProviderRequiresApiKey(providerForValidation);
 
           if (sourceConfig.customUrlPattern) {
-            const safePattern = sanitizeString(sourceConfig.customUrlPattern, 2000).trim();
+            const safePattern = sanitizeString(sourceConfig.customUrlPattern, 5000).trim();
             legacyArtwork[type].customUrlPattern = safePattern || undefined;
           }
 
@@ -618,8 +605,4 @@ export function getMalKeyFromConfig(config: UserConfig | null): string | null {
 
 export function getSimklKeyFromConfig(config: UserConfig | null): string | null {
   return decryptSimklApiKey(config);
-}
-
-export function getTraktKeyFromConfig(config: UserConfig | null): string | null {
-  return decryptTraktClientId(config);
 }

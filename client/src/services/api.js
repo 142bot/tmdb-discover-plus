@@ -445,40 +445,6 @@ class ApiService {
     });
   }
 
-  async previewTraktCatalog(
-    type,
-    filters,
-    previewPosterProvider = null,
-    previewPosterApiKey = null,
-    previewPosterCustomUrlPattern = null
-  ) {
-    const body = { type, filters };
-    if (previewPosterProvider) {
-      body.previewPosterProvider = previewPosterProvider;
-    }
-    if (previewPosterApiKey) {
-      body.previewPosterApiKey = previewPosterApiKey;
-    }
-    if (previewPosterCustomUrlPattern) {
-      body.previewPosterCustomUrlPattern = previewPosterCustomUrlPattern;
-    }
-    return this.request('/trakt/preview', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-  }
-
-  async getTraktNetworks() {
-    return this.request('/trakt/networks');
-  }
-
-  async validateTraktKey(clientId) {
-    return this.request('/validate-trakt-key', {
-      method: 'POST',
-      body: JSON.stringify({ clientId }),
-    });
-  }
-
   async validateMalKey(clientId) {
     return this.request('/validate-mal-key', {
       method: 'POST',

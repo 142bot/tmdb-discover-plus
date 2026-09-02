@@ -102,7 +102,6 @@ export interface StremioMetaPreview {
   tmdbId: number;
   imdbId: string | null;
   imdb_id: string | null;
-  traktSlug?: string | null;
   type: ContentType;
   name: string;
   slug: string;

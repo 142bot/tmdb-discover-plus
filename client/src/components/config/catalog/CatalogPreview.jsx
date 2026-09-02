@@ -39,8 +39,7 @@ export const CatalogPreview = memo(function CatalogPreview({
 
   const hasData = data && Array.isArray(data.metas) && data.metas.length > 0;
   const isCompactState = (!hasData && loading) || error || (!loading && !hasData);
-  const canOpenApiKeysFromError =
-    typeof error === 'string' && /trakt client id.*not configured/i.test(error);
+  const canOpenApiKeysFromError = false;
   const shouldAlwaysHideDetails = ['rpdb', 'topPosters', 'customUrl'].includes(
     previewPosterProvider
   );
@@ -146,11 +145,7 @@ export const CatalogPreview = memo(function CatalogPreview({
                   (item.id?.startsWith('tmdb:') ? item.id.replace('tmdb:', '') : null);
 
                 let itemUrl, linkTitle;
-                if (item.traktSlug) {
-                  const traktType = item.type === 'series' ? 'shows' : 'movies';
-                  itemUrl = `https://trakt.tv/${traktType}/${item.traktSlug}`;
-                  linkTitle = `View "${item.name}" on Trakt`;
-                } else if (imdbId) {
+                if (imdbId) {
                   itemUrl = `https://www.imdb.com/title/${imdbId}/`;
                   linkTitle = `View "${item.name}" on IMDb`;
                 } else if (tmdbId) {

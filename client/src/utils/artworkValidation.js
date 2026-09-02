@@ -74,15 +74,6 @@ export function validateArtworkProviderApiKey(provider, rawKey, opts = {}) {
     };
   }
 
-  if (provider === 'trakt') {
-    const valid = normalizedKey.length >= 10 && normalizedKey.length <= 128;
-    return {
-      valid,
-      normalizedKey,
-      error: valid ? null : 'Trakt Client ID must be 10-128 characters',
-    };
-  }
-
   const valid = normalizedKey.length <= 128;
   return {
     valid,

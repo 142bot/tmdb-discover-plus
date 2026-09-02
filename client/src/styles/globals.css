@@ -119,17 +119,6 @@
   --text-on-accent: #ffffff;
 }
 
-/* Trakt Theme Overrides */
-.theme-trakt {
-  --accent-primary: #ed1c24;
-  --accent-secondary: #c9181e;
-  --accent-tertiary: #ff2d35;
-  --accent-light: #ff545b;
-
-  --gradient-primary: linear-gradient(135deg, #ed1c24 0%, #ba161c 100%);
-  --text-on-accent: #ffffff;
-}
-
 * {
   box-sizing: border-box;
   margin: 0;

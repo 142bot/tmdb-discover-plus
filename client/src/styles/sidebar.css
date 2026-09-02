@@ -572,12 +572,6 @@
   font-weight: 700;
 }
 
-.catalog-item-badge--trakt {
-  background: #ed1c24;
-  color: #fff;
-  font-weight: 700;
-}
-
 .catalog-item-badge--filter-count {
   background: var(--text-muted);
   font-size: 0.575rem;
@@ -1467,9 +1461,6 @@
 }
 .source-tab.active.simkl {
   color: #0ac775;
-}
-.source-tab.active.trakt {
-  color: #ed1c24;
 }
 
 .source-tabs-compact {

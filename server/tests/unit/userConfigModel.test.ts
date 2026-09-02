@@ -11,7 +11,6 @@ describe('UserConfig preferences schema', () => {
       'preferences.disableMalSearch',
       'preferences.disableKitsuSearch',
       'preferences.disableSimklSearch',
-      'preferences.disableTraktSearch',
     ];
 
     for (const path of paths) {
@@ -28,7 +27,6 @@ describe('UserConfig preferences schema', () => {
     expect(doc.preferences.disableMalSearch).toBe(true);
     expect(doc.preferences.disableKitsuSearch).toBe(true);
     expect(doc.preferences.disableSimklSearch).toBe(true);
-    expect(doc.preferences.disableTraktSearch).toBe(true);
   });
 
   it('accepts kitsu as a valid catalog source', () => {
@@ -80,7 +78,7 @@ describe('UserConfig preferences schema', () => {
     // Authoritative list — must equal SourceType union in src/types/config.ts.
     // Compile-time check: every literal here is assignable to SourceType, and the
     // tuple's element type is SourceType. If either side drifts, this fails to compile.
-    const expectedSources = ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'trakt', 'kitsu'] as const;
+    const expectedSources = ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'kitsu', 'trakt'] as const;
     const _typecheck: readonly SourceType[] = expectedSources;
     void _typecheck;
 

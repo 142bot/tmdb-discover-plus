@@ -5,7 +5,8 @@ import { Film, Tv, GripVertical, Trash2, Copy, Sparkles } from 'lucide-react';
 export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onDuplicate }) {
   const getCatalogKey = (cat) => String(cat?._id || cat?.id || cat?.name);
   const id = getCatalogKey(catalog);
-  const isSourceDisabled = catalog?.source === 'mal';
+  const isSourceDisabled = false;
+  const effectiveSource = catalog?.source === 'trakt' ? 'tmdb' : catalog?.source || 'tmdb';
   const isCollectionCatalog =
     catalog?.type === 'collection' || catalog?.filters?.listType === 'collection';
 
@@ -56,17 +57,14 @@ export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onD
                   ? 'TV Shows'
                   : 'Movies'}
             </span>
-            <span className={`catalog-item-badge catalog-item-badge--${catalog.source || 'tmdb'}`}>
+            <span className={`catalog-item-badge catalog-item-badge--${effectiveSource}`}>
               {{
                 tmdb: 'TMDB',
                 imdb: 'IMDb',
                 anilist: 'AniList',
                 mal: 'MAL',
                 simkl: 'Simkl',
-                trakt: 'Trakt',
-              }[catalog.source || 'tmdb'] ||
-                catalog.source ||
-                'tmdb'}
+              }[effectiveSource] || 'TMDB'}
             </span>
             {isSourceDisabled && (
               <span className="catalog-item-badge catalog-item-badge--disabled">Disabled</span>

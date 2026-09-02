@@ -1,4 +1,22 @@
 tmdb-discover-plus.duckdns.org {
   encode zstd gzip
-  reverse_proxy tmdb-discover-plus:7000
+
+  @jikan path /v4/*
+  handle @jikan {
+    reverse_proxy jikan-api:8080
+  }
+
+  @imdbPreview path /api/imdb/preview*
+  handle @imdbPreview {
+    reverse_proxy tmdb-discover-plus:7000
+  }
+
+  @imdbApi path /api/imdb/*
+  handle @imdbApi {
+    reverse_proxy imdb-api:8787
+  }
+
+  handle {
+    reverse_proxy tmdb-discover-plus:7000
+  }
 }

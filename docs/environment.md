@@ -69,6 +69,20 @@ Storage backend selection priority: explicit `DATABASE_DRIVER` → auto-detect f
 | `TOP_POSTERS_API_KEY` | TOP Posters API key. Required when using Top Posters artwork provider.     | _(empty)_      |
 | `FANART_API_KEY`      | Fanart.tv API key. Required when using Fanart artwork provider.            | _(empty)_      |
 
+## IMDb Source
+
+The IMDb catalog source is enabled when a compatible IMDb API service is configured. It remains
+available on nightly deployments when these values are set.
+
+| Variable               | Description                                                                         | Default              |
+| ---------------------- | ----------------------------------------------------------------------------------- | -------------------- |
+| `IMDB_DATA_ENABLED`    | Explicitly enables or disables the source. When unset, a configured key enables it. | _(derived from key)_ |
+| `IMDB_DATA_KEY`        | Credential sent to the IMDb API service.                                            | _(empty)_            |
+| `IMDB_DATA_HOST`       | IMDb API service host, without a protocol.                                          | _(empty)_            |
+| `IMDB_DATA_ATTR_K`     | Request header name for `IMDB_DATA_KEY`.                                            | _(empty)_            |
+| `IMDB_DATA_ATTR_H`     | Request header name for the API host.                                               | _(empty)_            |
+| `IMDB_DATA_RATE_LIMIT` | Maximum IMDb API requests per second.                                               | `5`                  |
+
 ## CORS
 
 | Variable                 | Description                                     | Default |

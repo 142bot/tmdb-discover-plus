@@ -44,25 +44,10 @@ vi.mock('../../src/services/simkl/index.ts', () => ({
   getGenres: vi.fn(() => ['Action', 'Horror', 'Thriller']),
 }));
 
-vi.mock('../../src/services/trakt/index.ts', () => ({
-  isTraktEnabled: vi.fn(() => true),
-  getGenresByType: vi.fn(async () => ({
-    movie: [
-      { slug: 'action', name: 'Action' },
-      { slug: 'comedy', name: 'Comedy' },
-    ],
-    series: [
-      { slug: 'drama', name: 'Drama' },
-      { slug: 'documentary', name: 'Documentary' },
-    ],
-  })),
-}));
-
 import { buildManifest } from '../../src/services/manifestService.ts';
 import { enrichManifestWithGenres } from '../../src/services/manifestService.ts';
 import { enrichManifestWithExtras } from '../../src/services/manifestService.ts';
 import * as tmdb from '../../src/services/tmdb/index.ts';
-import * as traktService from '../../src/services/trakt/index.ts';
 import { getApiKeyFromConfig } from '../../src/services/configService.ts';
 
 describe('buildManifest', () => {
@@ -123,7 +108,7 @@ describe('buildManifest', () => {
         catalogs: [
           { _id: 'third', name: 'Third', type: 'movie', source: 'tmdb', enabled: true },
           { _id: 'first', name: 'First', type: 'series', source: 'imdb', enabled: true },
-          { _id: 'second', name: 'Second', type: 'movie', source: 'trakt', enabled: true },
+          { _id: 'second', name: 'Second', type: 'movie', source: 'simkl', enabled: true },
         ],
         preferences: { disableSearch: true },
       },
@@ -133,59 +118,13 @@ describe('buildManifest', () => {
     expect(manifest.catalogs.map((catalog: any) => catalog.id)).toEqual([
       'tmdb-third',
       'imdb-first',
-      'trakt-second',
+      'simkl-second',
     ]);
   });
 
   it('omits search catalogs when disableSearch is true', () => {
     const manifest = buildManifest({ catalogs: [], preferences: { disableSearch: true } }, baseUrl);
     expect(manifest.catalogs.length).toBe(0);
-  });
-
-  it('omits Trakt search catalogs when disableTraktSearch is not explicitly false', () => {
-    const manifest = buildManifest(
-      {
-        catalogs: [{ _id: 'trakt-list', name: 'Trakt List', type: 'movie', source: 'trakt' }],
-        preferences: { disableTraktSearch: true },
-      },
-      baseUrl
-    );
-
-    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
-    expect(ids).toContain('trakt-trakt-list');
-    expect(ids).not.toContain('trakt-search-movie');
-    expect(ids).not.toContain('trakt-search-series');
-  });
-
-  it('includes Trakt search catalogs when Trakt search is enabled, even without Trakt catalogs', () => {
-    const manifest = buildManifest(
-      {
-        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
-        preferences: { disableTraktSearch: false },
-      },
-      baseUrl
-    );
-
-    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
-    expect(ids).toContain('trakt-search-movie');
-    expect(ids).toContain('trakt-search-series');
-  });
-
-  it('includes Trakt search catalogs when user has Trakt key even if env Trakt is disabled', () => {
-    vi.mocked(traktService.isTraktEnabled).mockReturnValue(false);
-
-    const manifest = buildManifest(
-      {
-        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
-        preferences: { disableTraktSearch: false },
-        traktClientIdEncrypted: 'encrypted-user-trakt-key',
-      },
-      baseUrl
-    );
-
-    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
-    expect(ids).toContain('trakt-search-movie');
-    expect(ids).toContain('trakt-search-series');
   });
 
   it('includes AniList search catalogs when AniList search is enabled, even without AniList catalogs', () => {
@@ -465,34 +404,6 @@ describe('buildManifest', () => {
     expect(genreExtra?.optionsLimit).toBe(1);
     expect(target?.extra[0]?.name).toBe('genre');
     expect(target?.extra[1]?.name).toBe('skip');
-  });
-
-  it('falls back to genre extras when unsupported mode is saved for Trakt', async () => {
-    const userConfig = {
-      userId: 'user-trakt',
-      catalogs: [
-        {
-          _id: 'trakt-genre',
-          name: 'Trakt Genre Catalog',
-          type: 'series',
-          source: 'trakt',
-          enabled: true,
-          filters: {
-            stremioExtraMode: 'year',
-          },
-        },
-      ],
-      preferences: { disableSearch: true },
-    };
-
-    const manifest = buildManifest(userConfig as any, baseUrl);
-    await enrichManifestWithGenres(manifest, userConfig as any);
-
-    const target = manifest.catalogs.find((c) => c.id === 'trakt-trakt-genre');
-    const genreExtra = target?.extra.find((e) => e.name === 'genre');
-
-    expect(genreExtra?.options).toEqual(['All', 'Documentary', 'Drama']);
-    expect(target?.extra.some((e) => e.name === 'year')).toBe(false);
   });
 
   it('does not inject extras for TMDB collection catalogs', async () => {

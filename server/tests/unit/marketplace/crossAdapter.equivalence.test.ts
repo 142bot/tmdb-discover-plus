@@ -121,7 +121,7 @@ const SEED_SPECS: SeedSpec[] = [
     catalogId: 'cat-4',
     marketplaceId: randomUUID(),
     name: 'Cooking Masterclass',
-    source: 'trakt',
+    source: 'imdb',
     type: 'movie',
     genres: ['Drama', SCOPE_GENRE],
     visibility: 'public',

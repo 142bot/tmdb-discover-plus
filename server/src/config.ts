@@ -138,15 +138,6 @@ export const config = Object.freeze({
     },
   }),
 
-  traktApi: Object.freeze({
-    clientId: env('TRAKT_CLIENT_ID'),
-    clientSecret: env('TRAKT_CLIENT_SECRET'),
-    rateLimit: envInt('TRAKT_RATE_LIMIT', 3),
-    get enabled(): boolean {
-      return !!process.env['TRAKT_CLIENT_ID'];
-    },
-  }),
-
   logging: Object.freeze({
     level: env('LOG_LEVEL', 'info').toLowerCase(),
     format: env('LOG_FORMAT', 'text'),

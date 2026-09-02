@@ -1,9 +1,7 @@
 import { getAllSources } from '../../sources';
 import { MARKETPLACE_TYPES as TYPES } from '../../constants/marketplaceTypes';
 
-const SOURCES = getAllSources()
-  .filter((s) => s.id !== 'mal')
-  .map((s) => ({ id: s.id, label: s.label }));
+const SOURCES = getAllSources().map((s) => ({ id: s.id, label: s.label }));
 
 /**
  * MarketplaceFacets — source/type facet controls for marketplace search.

@@ -264,11 +264,6 @@
   color: #f5c518;
   background: rgba(245, 197, 24, 0.1);
 }
-.settings-provider-btn.trakt-btn.active {
-  border-color: #ed1c24;
-  color: #ed1c24;
-  background: rgba(237, 28, 36, 0.1);
-}
 .settings-provider-btn.anilist-btn.active {
   border-color: #02a9ff;
   color: #02a9ff;

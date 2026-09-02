@@ -60,16 +60,6 @@ export function decryptSimklApiKey(config: UserConfig | null): string | null {
   }
 }
 
-export function decryptTraktClientId(config: UserConfig | null): string | null {
-  if (!config?.traktClientIdEncrypted) return null;
-  try {
-    return decrypt(config.traktClientIdEncrypted) || null;
-  } catch (err) {
-    log.error('Failed to decrypt Trakt Client ID', { error: (err as Error).message });
-    return null;
-  }
-}
-
 // ─── Artwork Keys ─────────────────────────────────────────
 
 export function decryptArtworkKey(config: UserConfig | null, artworkType: ArtKind): string | null {

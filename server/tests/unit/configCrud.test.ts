@@ -30,7 +30,7 @@ import {
   getApiKeyFromConfig,
   getArtworkKeyFromConfig,
   getPosterKeyFromConfig,
-  getTraktKeyFromConfig,
+  getMalKeyFromConfig,
   deleteUserConfig,
 } from '../../src/services/configService.ts';
 import { encrypt } from '../../src/utils/encryption.ts';
@@ -131,8 +131,8 @@ describe('Config CRUD lifecycle', () => {
 
   it('preserves encrypted source and poster keys across partial updates', async () => {
     const encKey = encrypt(TEST_API_KEY);
-    const traktClientId = 'trakt-client-id-123456789';
-    const encTraktKey = encrypt(traktClientId);
+    const malClientId = 'mal-client-id-123456789';
+    const encMalKey = encrypt(malClientId);
     const encPosterKey = encrypt('poster-key-123');
     const encBackdropKey = encrypt('backdrop-key-123');
     const encLogoKey = encrypt('logo-key-123');
@@ -140,7 +140,7 @@ describe('Config CRUD lifecycle', () => {
     await saveUserConfig({
       userId: USER_ID,
       tmdbApiKeyEncrypted: encKey,
-      traktClientIdEncrypted: encTraktKey,
+      malClientIdEncrypted: encMalKey,
       catalogs: [],
       preferences: {
         artwork: {
@@ -156,13 +156,13 @@ describe('Config CRUD lifecycle', () => {
       userId: USER_ID,
       tmdbApiKey: TEST_API_KEY,
       configName: 'Updated',
-      catalogs: [{ name: 'Trending', type: 'series', source: 'trakt', filters: {} }],
+      catalogs: [{ name: 'Trending', type: 'series', source: 'mal', filters: {} }],
       preferences: { defaultLanguage: 'es' },
     });
 
     const config = await getUserConfig(USER_ID);
-    expect(config?.traktClientIdEncrypted).toBe(encTraktKey);
-    expect(getTraktKeyFromConfig(config)).toBe(traktClientId);
+    expect(config?.malClientIdEncrypted).toBe(encMalKey);
+    expect(getMalKeyFromConfig(config)).toBe(malClientId);
     expect(getPosterKeyFromConfig(config)).toBe('poster-key-123');
     expect(getArtworkKeyFromConfig(config, 'backdrop')).toBe('backdrop-key-123');
     expect(getArtworkKeyFromConfig(config, 'logo')).toBe('logo-key-123');

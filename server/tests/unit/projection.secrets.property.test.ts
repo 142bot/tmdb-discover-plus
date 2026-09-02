@@ -59,8 +59,8 @@ const source: fc.Arbitrary<SourceType> = fc.constantFrom(
   'anilist',
   'mal',
   'simkl',
-  'trakt',
-  'kitsu'
+  'kitsu',
+  'trakt'
 );
 
 const contentType: fc.Arbitrary<ContentType> = fc.constantFrom(

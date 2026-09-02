@@ -145,9 +145,10 @@ export const MAL_STATUSES = [
 export const MAL_RATINGS = [
   { value: 'g', label: 'G - All Ages' },
   { value: 'pg', label: 'PG - Children' },
-  { value: 'pg_13', label: 'PG-13 - Teens 13+' },
-  { value: 'r', label: 'R - 17+' },
-  { value: 'r+', label: 'R+ - Mild Nudity' },
+  { value: 'pg13', label: 'PG-13 - Teens 13+' },
+  { value: 'r17', label: 'R - 17+' },
+  { value: 'r', label: 'R+ - Mild Nudity' },
+  { value: 'rx', label: 'Rx - Hentai' },
 ] as const;
 
 export const MAL_GENRES: Array<{ id: number; name: string }> = [

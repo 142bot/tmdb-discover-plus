@@ -18,7 +18,6 @@ import {
   deleteUserConfig,
   getApiKeyFromConfig,
   getPublicStats,
-  getTraktKeyFromConfig,
 } from '../services/configService.ts';
 import * as tmdb from '../services/tmdb/index.ts';
 import * as imdb from '../services/imdb/index.ts';
@@ -26,7 +25,6 @@ import * as anilist from '../services/anilist/index.ts';
 import * as mal from '../services/mal/index.ts';
 import * as kitsu from '../services/kitsu/index.ts';
 import * as simkl from '../services/simkl/index.ts';
-import * as trakt from '../services/trakt/index.ts';
 import { searchCities } from '../services/geo.ts';
 import {
   getBaseUrl,
@@ -269,61 +267,13 @@ router.post('/validate-tvdb-key', requireAuth, strictRateLimit, async (req, res)
   }
 });
 
-router.post('/validate-trakt-key', requireAuth, strictRateLimit, async (req, res) => {
-  try {
-    const { clientId } = req.body;
-    if (!clientId || typeof clientId !== 'string') {
-      return res.json({ valid: false, error: 'Trakt Client ID is required' });
-    }
-    if (clientId.length < 10 || clientId.length > 128) {
-      return res.json({ valid: false, error: 'Invalid Trakt Client ID format' });
-    }
-    // Validate by making a lightweight API call to Trakt
-    const testUrl = 'https://api.trakt.tv/movies/trending?page=1&limit=1';
-    try {
-      const response = await fetch(testUrl, {
-        headers: {
-          'Content-Type': 'application/json',
-          'trakt-api-version': '2',
-          'trakt-api-key': clientId,
-          'User-Agent': 'TMDB-Discover-Plus/2.9.2',
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (response.ok) {
-        return res.json({ valid: true });
-      } else if (response.status === 401 || response.status === 403) {
-        return res.json({
-          valid: false,
-          error: 'Trakt rejected this Client ID. Please verify it is correct.',
-        });
-      }
-      // For non-auth errors (429, 500, etc.), accept the key — it's likely valid
-      // but Trakt is temporarily unavailable
-      log.warn('Trakt validation returned non-auth error, accepting key', {
-        status: response.status,
-      });
-      return res.json({ valid: true });
-    } catch (fetchErr) {
-      // Network error (DNS, proxy, timeout) — accept the key since we can't verify
-      log.warn('Trakt validation network error, accepting key', {
-        error: (fetchErr as Error).message,
-      });
-      return res.json({ valid: true });
-    }
-  } catch (error) {
-    log.error('Trakt key validation error', { error: (error as Error).message });
-    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
-  }
-});
-
 router.post('/source-key', requireAuth, resolveApiKey, strictRateLimit, async (req, res) => {
   try {
     const { source, key } = req.body;
     if (!source || !key || typeof key !== 'string') {
       return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'source and key are required');
     }
-    if (source !== 'mal' && source !== 'simkl' && source !== 'trakt') {
+    if (source !== 'mal' && source !== 'simkl') {
       return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Invalid source');
     }
 
@@ -342,7 +292,6 @@ router.post('/source-key', requireAuth, resolveApiKey, strictRateLimit, async (r
     const fieldMap: Record<string, string> = {
       mal: 'malClientIdEncrypted',
       simkl: 'simklApiKeyEncrypted',
-      trakt: 'traktClientIdEncrypted',
     };
     const fieldName = fieldMap[source];
     const savedConfig = await saveUserConfig({
@@ -364,14 +313,13 @@ router.get('/source-keys', requireAuth, resolveApiKey, async (req, res) => {
     const apiKey = getApiKey(req);
     const configs = await getConfigsByApiKey(apiKey);
     if (configs.length === 0) {
-      return res.json({ mal: false, simkl: false, trakt: false });
+      return res.json({ mal: false, simkl: false });
     }
 
     const userConfig = configs[0];
     res.json({
       mal: true, // Jikan API - no key needed
       simkl: !!userConfig.simklApiKeyEncrypted || !!config.simklApi.clientId,
-      trakt: !!userConfig.traktClientIdEncrypted || !!config.traktApi.clientId,
     });
   } catch (error) {
     log.error('GET /source-keys error', { error: (error as Error).message });
@@ -403,12 +351,6 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
   try {
     const apiKey = getApiKey(req);
     const configs = await getConfigsByApiKey(apiKey).catch(() => []);
-    const userConfig = configs[0] || null;
-    const traktClientId =
-      config.traktApi.clientId ||
-      (userConfig ? getTraktKeyFromConfig(userConfig) : null) ||
-      undefined;
-    const traktHasKey = !!config.traktApi.clientId || !!userConfig?.traktClientIdEncrypted;
 
     const [
       movieGenres,
@@ -421,14 +363,14 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
       watchRegions,
       tvNetworks,
     ] = await Promise.all([
-      tmdb.getGenres(apiKey, 'movie'),
-      tmdb.getGenres(apiKey, 'series'),
-      tmdb.getLanguages(apiKey),
-      tmdb.getOriginalLanguages(apiKey),
-      tmdb.getCountries(apiKey),
-      tmdb.getCertifications(apiKey, 'movie'),
-      tmdb.getCertifications(apiKey, 'series'),
-      tmdb.getWatchRegions(apiKey),
+      tmdb.getGenres(apiKey, 'movie').catch(() => []),
+      tmdb.getGenres(apiKey, 'series').catch(() => []),
+      tmdb.getLanguages(apiKey).catch(() => []),
+      tmdb.getOriginalLanguages(apiKey).catch(() => []),
+      tmdb.getCountries(apiKey).catch(() => []),
+      tmdb.getCertifications(apiKey, 'movie').catch(() => ({})),
+      tmdb.getCertifications(apiKey, 'series').catch(() => ({})),
+      tmdb.getWatchRegions(apiKey).catch(() => []),
       tmdb.getNetworks('').catch((err) => {
         logSwallowedError('api:reference-data-networks', err);
         return [];
@@ -447,7 +389,7 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
 
       imdbData = {
         enabled: true,
-        genres: await imdb.getGenres(),
+        genres: await imdb.getGenres().catch(() => []),
         keywords: imdb.getKeywords(),
         awards: [...imdb.IMDB_AWARDS],
         sortOptions: imdb.getSortOptions(),
@@ -488,7 +430,7 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
       anilist: {
         enabled: true,
         genres: anilist.getGenres(),
-        tags: await anilist.getTagsFromApi(),
+        tags: await anilist.getTagsFromApi().catch(() => []),
         sortOptions: anilist.getSortOptions(),
         formatOptions: anilist.getFormatOptions(),
         statusOptions: anilist.getStatusOptions(),
@@ -514,19 +456,6 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
         trendingPeriods: simkl.getTrendingPeriods(),
         bestFilters: simkl.getBestFilters(),
         animeTypes: simkl.getAnimeTypes(),
-      },
-      trakt: {
-        enabled: trakt.isTraktEnabled(),
-        genres: await trakt.getGenresByType(traktClientId).catch(() => trakt.getGenresByType()),
-        listTypes: trakt.getListTypes(),
-        periods: trakt.getPeriods(),
-        calendarTypes: trakt.getCalendarTypes(),
-        showStatuses: trakt.getShowStatuses(),
-        certificationsMovie: trakt.getCertifications('movie'),
-        certificationsSeries: trakt.getCertifications('series'),
-        communityMetrics: trakt.getCommunityMetrics(),
-        networks: await trakt.getNetworks(traktClientId).catch(() => []),
-        hasKey: traktHasKey,
       },
     };
 
@@ -1074,7 +1003,7 @@ async function resolvePreviewArtworkLanguagePreferences(
 }
 
 async function resolvePreviewCustomUrlPattern(req: Request): Promise<string | null> {
-  const bodyPattern = sanitizeString(String(req.body?.previewPosterCustomUrlPattern || ''), 2048);
+  const bodyPattern = sanitizeString(String(req.body?.previewPosterCustomUrlPattern || ''), 5000);
   if (bodyPattern && bodyPattern.trim()) {
     return bodyPattern.trim();
   }
@@ -1771,14 +1700,6 @@ function parseBooleanFlag(value: unknown): boolean {
   return false;
 }
 
-function isTraktPreviewProfilingEnabled(req: Request): boolean {
-  return (
-    parseBooleanFlag(req.body?.profile) ||
-    parseBooleanFlag(req.query?.profile) ||
-    parseBooleanFlag(req.headers['x-profile'])
-  );
-}
-
 router.post('/anilist/preview', requireAuth, async (req, res) => {
   try {
     const { filters, type } = req.body;
@@ -2016,227 +1937,6 @@ router.post('/simkl/preview', requireAuth, async (req, res) => {
     res.json({ metas: metasWithPreviewPoster, totalResults: null });
   } catch (error) {
     log.error('POST /simkl/preview error', { error: (error as Error).message });
-    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
-  }
-});
-
-router.post('/trakt/preview', requireAuth, resolveApiKey, async (req, res) => {
-  try {
-    const profiler = new RequestProfiler(isTraktPreviewProfilingEnabled(req));
-    const initTimer = profiler.start('preview.init');
-    const { filters, type } = req.body;
-    const previewPosterProvider = resolvePreviewPosterProvider(req);
-    const safeFilters = filters || {};
-    const queryFilters = { ...safeFilters };
-    const randomize = Boolean(queryFilters.randomize || queryFilters.sortBy === 'random');
-    const previewListType = queryFilters.traktListType || 'calendar';
-    const isCalendarType = previewListType === 'calendar' || previewListType === 'recently_aired';
-    const contentType = (type === 'series' ? 'series' : 'movie') as ContentType;
-    const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
-    let page = 1;
-    profiler.end(initTimer, {
-      listType: previewListType,
-      contentType,
-      randomize,
-      isCalendarType,
-    });
-
-    const finalizeResponse = (previewMetas: StremioMetaPreview[]) => {
-      const response: {
-        metas: StremioMetaPreview[];
-        totalResults: null;
-        profile?: RequestProfileSummary;
-      } = {
-        metas: previewMetas,
-        totalResults: null,
-      };
-
-      const profileSummary = profiler.summary();
-      if (profileSummary) {
-        response.profile = profileSummary;
-        log.info('Trakt preview profile', {
-          listType: previewListType,
-          contentType,
-          randomize,
-          totalMs: profileSummary.totalMs,
-          topSteps: profileSummary.topSteps.slice(0, 10),
-        });
-      }
-
-      return response;
-    };
-
-    const discoverProfileHook:
-      | import('../services/trakt/discover.ts').DiscoverProfileHook
-      | undefined = profiler.isEnabled()
-      ? (event) => {
-          profiler.record(`discover.${event.phase}`, event.durationMs, event.details);
-        }
-      : undefined;
-
-    getApiKey(req);
-    const configLoadTimer = profiler.start('preview.config_lookup');
-    const lookupConfig = await getPreviewLookupConfig(req);
-    profiler.end(configLoadTimer, { configCount: lookupConfig ? 1 : 0 });
-
-    // Resolve Trakt Client ID: server env var → user's saved key
-    let traktClientId: string | null = config.traktApi.clientId || null;
-    if (!traktClientId) {
-      if (lookupConfig) {
-        traktClientId = getTraktKeyFromConfig(lookupConfig);
-      }
-    }
-    if (!traktClientId) {
-      return sendError(
-        res,
-        503,
-        ErrorCodes.INTERNAL_ERROR,
-        'Trakt Client ID not configured on server.'
-      );
-    }
-
-    const excludeGenres: string[] | undefined = Array.isArray(queryFilters.traktExcludeGenres)
-      ? queryFilters.traktExcludeGenres.filter(
-          (genre: unknown): genre is string => typeof genre === 'string'
-        )
-      : undefined;
-
-    const discoverOptions: import('../services/trakt/discover.ts').DiscoverOptions | undefined =
-      discoverProfileHook ? { onProfile: discoverProfileHook } : undefined;
-
-    if (randomize) {
-      const randomProbeTimer = profiler.start('preview.random_probe.discover');
-      const probe = await trakt.discover(
-        queryFilters,
-        contentType,
-        1,
-        traktClientId,
-        discoverOptions
-      );
-      profiler.end(randomProbeTimer, {
-        itemsCount: probe.items.length,
-        hasMore: probe.hasMore,
-      });
-
-      const randomFilterTimer = profiler.start('preview.random_probe.filter');
-      const filteredItems = excludeGenres?.length
-        ? probe.items.filter(
-            (item) => !(item.genres || []).some((g: string) => excludeGenres!.includes(g))
-          )
-        : probe.items;
-      profiler.end(randomFilterTimer, {
-        beforeCount: probe.items.length,
-        afterCount: filteredItems.length,
-        excluded: excludeGenres?.length || 0,
-      });
-
-      if (previewListType === 'boxoffice' || isCalendarType) {
-        const convertTimer = profiler.start('preview.random_probe.convert_and_shuffle');
-        const previewMetas = shuffleArray(
-          trakt.batchConvertToStremioMeta(filteredItems, contentType)
-        ).slice(0, PREVIEW_PAGE_SIZE);
-        profiler.end(convertTimer, {
-          inputCount: filteredItems.length,
-          outputCount: previewMetas.length,
-        });
-
-        const artworkTimer = profiler.start('preview.apply_preview_poster');
-        const metasWithPreviewPoster = await applyPreviewPosterProvider(
-          previewMetas,
-          previewPosterProvider,
-          req
-        );
-        profiler.end(artworkTimer, {
-          provider: previewPosterProvider || 'default',
-          count: metasWithPreviewPoster.length,
-        });
-        return res.json(finalizeResponse(metasWithPreviewPoster));
-      }
-      const maxPage = probe.hasMore ? 5 : 1;
-      page = Math.floor(Math.random() * maxPage) + 1;
-    }
-
-    let pages = 0;
-    while (metas.length < PREVIEW_PAGE_SIZE && pages < PREVIEW_MAX_BACKFILL) {
-      const discoverTimer = profiler.start('preview.backfill.discover');
-      const result = await trakt.discover(
-        queryFilters,
-        contentType,
-        page,
-        traktClientId,
-        discoverOptions
-      );
-      profiler.end(discoverTimer, {
-        page,
-        itemsCount: result.items.length,
-        hasMore: result.hasMore,
-      });
-
-      const filterTimer = profiler.start('preview.backfill.filter');
-      const filtered = excludeGenres?.length
-        ? result.items.filter(
-            (item) => !(item.genres || []).some((g: string) => excludeGenres!.includes(g))
-          )
-        : result.items;
-      profiler.end(filterTimer, {
-        page,
-        beforeCount: result.items.length,
-        afterCount: filtered.length,
-        excluded: excludeGenres?.length || 0,
-      });
-
-      const convertTimer = profiler.start('preview.backfill.convert');
-      metas.push(...trakt.batchConvertToStremioMeta(filtered, contentType));
-      profiler.end(convertTimer, {
-        page,
-        convertedCount: filtered.length,
-        metasAccumulated: metas.length,
-      });
-      pages++;
-      if (!result.hasMore) break;
-      page++;
-    }
-
-    const finalSliceTimer = profiler.start('preview.finalize_slice');
-    const previewMetas = randomize ? shuffleArray(metas) : metas;
-    const finalMetas = previewMetas.slice(0, PREVIEW_PAGE_SIZE);
-    profiler.end(finalSliceTimer, {
-      beforeSliceCount: previewMetas.length,
-      afterSliceCount: finalMetas.length,
-    });
-
-    const artworkTimer = profiler.start('preview.apply_preview_poster');
-    const metasWithPreviewPoster = await applyPreviewPosterProvider(
-      finalMetas,
-      previewPosterProvider,
-      req
-    );
-    profiler.end(artworkTimer, {
-      provider: previewPosterProvider || 'default',
-      count: metasWithPreviewPoster.length,
-    });
-
-    res.json(finalizeResponse(metasWithPreviewPoster));
-  } catch (error) {
-    log.error('POST /trakt/preview error', { error: (error as Error).message });
-    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
-  }
-});
-
-router.get('/trakt/networks', requireAuth, resolveApiKey, async (req, res) => {
-  try {
-    let traktClientId: string | null = config.traktApi.clientId || null;
-    if (!traktClientId) {
-      const apiKey = getApiKey(req);
-      const configs = await getConfigsByApiKey(apiKey);
-      if (configs.length > 0) {
-        traktClientId = getTraktKeyFromConfig(configs[0]);
-      }
-    }
-    const networks = await trakt.getNetworks(traktClientId || undefined).catch(() => []);
-    res.json({ networks });
-  } catch (error) {
-    log.error('GET /trakt/networks error', { error: (error as Error).message });
     sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
   }
 });

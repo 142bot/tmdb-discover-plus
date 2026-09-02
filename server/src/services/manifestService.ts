@@ -7,7 +7,6 @@ import * as imdb from './imdb/index.ts';
 import * as anilist from './anilist/index.ts';
 import * as mal from './mal/index.ts';
 import * as simkl from './simkl/index.ts';
-import * as trakt from './trakt/index.ts';
 import { getSource, getAllSources } from './sources/registry.ts';
 import { normalizeGenreName, parseIdArray } from '../utils/helpers.ts';
 import { stableStringify } from '../utils/stableStringify.ts';
@@ -38,7 +37,7 @@ const GENRE_ONLY_STREMIO_EXTRA_MODES: StremioExtraMode[] = ['genre'];
 const SUPPORTED_ID_PREFIXES = ['tmdb:', 'tt', 'mal:', 'kitsu:', 'anilist:', 'anidb:'];
 
 const MIN_DROPDOWN_YEAR = 1900;
-const DISABLED_SOURCES = new Set(['mal']);
+const DISABLED_SOURCES = new Set<string>();
 
 function buildManifestVersion(userConfig: UserConfig | null): string {
   if (!userConfig) {
@@ -290,7 +289,6 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       mal: 'disableMalSearch',
       kitsu: 'disableKitsuSearch',
       simkl: 'disableSimklSearch',
-      trakt: 'disableTraktSearch',
     };
 
     for (const source of getAllSources()) {
@@ -308,8 +306,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       // global env credentials are not configured.
       const hasUserScopedCredential =
         (source.sourceId === 'mal' && !!userConfig?.malClientIdEncrypted) ||
-        (source.sourceId === 'simkl' && !!userConfig?.simklApiKeyEncrypted) ||
-        (source.sourceId === 'trakt' && !!userConfig?.traktClientIdEncrypted);
+        (source.sourceId === 'simkl' && !!userConfig?.simklApiKeyEncrypted);
       if (!source.isEnabled() && !hasUserScopedCredential) continue;
 
       const searchCatalogs = source.getSearchCatalogs();
@@ -422,30 +419,6 @@ export async function enrichManifestWithGenres(
           upsertGenreExtra(
             catalog,
             [...simkl.getGenres()],
-            savedCatalog.filters?.discoverOnly === true
-          );
-          return;
-        }
-
-        if (catalog.id.startsWith('trakt-')) {
-          const savedCatalog = (config.catalogs || []).find((c) => {
-            const idFromStored = `trakt-${c._id || c.name.toLowerCase().replace(/\s+/g, '-')}`;
-            return idFromStored === catalog.id;
-          });
-          if (!savedCatalog) return;
-
-          const dropdownMode = getStremioExtraMode(
-            savedCatalog.filters as Record<string, unknown> | undefined,
-            GENRE_ONLY_STREMIO_EXTRA_MODES
-          );
-          if (dropdownMode !== 'genre') return;
-
-          const traktGenresByType = await trakt.getGenresByType();
-          const scopedGenres =
-            catalog.type === 'series' ? traktGenresByType.series : traktGenresByType.movie;
-          upsertGenreExtra(
-            catalog,
-            scopedGenres.map((genre) => genre.name),
             savedCatalog.filters?.discoverOnly === true
           );
           return;

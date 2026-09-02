@@ -10,7 +10,6 @@ const defaultPreferences = {
   disableMalSearch: true,
   disableKitsuSearch: true,
   disableSimklSearch: true,
-  disableTraktSearch: true,
 };
 
 export function useConfig(initialUserId = null) {
@@ -115,7 +114,21 @@ export function useConfig(initialUserId = null) {
 
   const applyConfig = useCallback((configData) => {
     setUserId(configData.userId);
-    setCatalogs(configData.catalogs || []);
+    const convertedCatalogs = (configData.catalogs || []).map((cat) => {
+      if (
+        cat.source === 'trakt' ||
+        cat.wasConvertedFromTrakt ||
+        Object.keys(cat.filters || {}).some((k) => k.startsWith('trakt'))
+      ) {
+        return {
+          ...cat,
+          source: 'tmdb',
+          wasConvertedFromTrakt: true,
+        };
+      }
+      return cat;
+    });
+    setCatalogs(convertedCatalogs);
     setConfigName(configData.configName || '');
     setPreferences({
       ...defaultPreferences,

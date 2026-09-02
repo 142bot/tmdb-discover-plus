@@ -16,7 +16,6 @@ const SOURCE_ATTRIBUTION = {
   mal: { label: 'MyAnimeList', url: 'https://myanimelist.net/' },
   kitsu: { label: 'Kitsu', url: 'https://kitsu.io/' },
   simkl: { label: 'Simkl', url: 'https://simkl.com/' },
-  trakt: { label: 'Trakt', url: 'https://trakt.tv/' },
 };
 
 const PREVIEW_POSTER_PROVIDER_OVERRIDE_OPTIONS = [
@@ -204,7 +203,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     imdbAwards,
     imdbSortOptions,
     imdbTitleTypes,
-    imdbEnabled,
     imdbCertificateRatings,
     imdbRankedLists,
     imdbWithDataOptions,
@@ -239,18 +237,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
-    // Trakt reference data
-    traktGenres,
-    traktListTypes,
-    traktPeriods,
-    traktCalendarTypes,
-
-    traktShowStatuses,
-    traktCertificationsMovie,
-    traktCertificationsSeries,
-    traktCommunityMetrics,
-    traktNetworks,
-    traktHasKey,
     selectedPeople,
     setSelectedPeople,
     selectedCompanies,
@@ -377,7 +363,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     !isCollectionModeListType;
   const supportsFullFilters = !isPresetCatalog && !isCollection;
   const isImdbCatalog = localCatalog?.source === 'imdb';
-  const showImdbSourceDisabledNotice = isImdbCatalog && !imdbEnabled;
   const previewPosterProviderHint = getPreviewPosterProviderHint(
     previewPosterProvider,
     globalPreviewPosterProvider
@@ -386,48 +371,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     previewPosterProvider && previewPosterProvider !== 'default'
       ? previewPosterProvider
       : globalPreviewPosterProvider;
-
-  const imdbSourceDisabledNotice = (
-    <div className="empty-state">
-      <div
-        className="empty-state-icon"
-        style={{
-          color: 'var(--accent-primary)',
-          opacity: 0.8,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-        }}
-      >
-        <AlertTriangle size={48} />
-      </div>
-      <h3>IMDb Source Unavailable</h3>
-      <p style={{ maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
-        IMDb catalogs are disabled on the nightly build due to resource constraints. Please switch
-        to the{' '}
-        <a
-          href="https://tmdb-discover-plus.elfhosted.com/"
-          style={{
-            color: 'var(--accent-primary)',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          stable version
-        </a>{' '}
-        to manage and edit IMDb catalogs.
-      </p>
-    </div>
-  );
-
-  if (showImdbSourceDisabledNotice) {
-    return (
-      <div className="editor-container">
-        <div className="editor-panel">{imdbSourceDisabledNotice}</div>
-      </div>
-    );
-  }
 
   const catalogSource = getSource(localCatalog?.source ?? 'tmdb');
   const SourceFilterPanel = catalogSource.FilterPanelComponent;
@@ -512,18 +455,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
-    // Trakt reference data
-    traktGenres,
-    traktListTypes,
-    traktPeriods,
-    traktCalendarTypes,
-
-    traktShowStatuses,
-    traktCertificationsMovie,
-    traktCertificationsSeries,
-    traktCommunityMetrics,
-    traktNetworks,
-    traktHasKey,
     handleTVNetworkSearch,
     handleTriStateGenreClick,
     genresLoading,
@@ -698,11 +629,14 @@ export const CatalogEditor = memo(function CatalogEditor() {
             )}
           </div>
 
-          {localCatalog?.source === 'mal' && (
-            <div className="mal-jikan-warning" role="status">
+          {(localCatalog?.wasConvertedFromTrakt ||
+            localCatalog?.source === 'trakt' ||
+            Object.keys(localCatalog?.filters || {}).some((k) => k.startsWith('trakt'))) && (
+            <div className="trakt-converted-warning" role="alert">
               <AlertTriangle size={16} aria-hidden="true" />
               <span>
-                Some MAL results may be temporarily unavailable when Jikan cannot reach MyAnimeList.
+                Trakt source is disabled. This catalog has been converted to TMDB. Please review and
+                adjust your filters.
               </span>
             </div>
           )}

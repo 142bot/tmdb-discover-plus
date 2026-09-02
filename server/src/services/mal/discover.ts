@@ -77,13 +77,46 @@ export async function getRanking(
   const path = `/top/anime?${params.toString()}`;
   log.debug('Jikan ranking', { rankingType, type, page });
 
-  const response = await jikanFetch<JikanResponse>(path);
-  const anime = response.data.map(jikanToMalAnime);
+  let response: JikanResponse;
+  try {
+    response = await jikanFetch<JikanResponse>(path);
+  } catch (err) {
+    // If top ranking query returns 504 / network error, fall back to current season
+    log.warn('Top anime query failed, falling back to current season', {
+      path,
+      error: (err as Error).message,
+    });
+    const fallbackParams = new URLSearchParams();
+    fallbackParams.set('page', String(page));
+    const jikanType = contentTypeToJikanType(type);
+    if (jikanType) fallbackParams.set('filter', jikanType);
+    response = await jikanFetch<JikanResponse>(`/seasons/now?${fallbackParams.toString()}`);
+  }
+
+  // If response has no data (e.g., self-hosted DB cold on specific top filters), fall back to /seasons/now
+  if (!response?.data || response.data.length === 0) {
+    const fallbackParams = new URLSearchParams();
+    fallbackParams.set('page', String(page));
+    const jikanType = contentTypeToJikanType(type);
+    if (jikanType) fallbackParams.set('filter', jikanType);
+    try {
+      const seasonalRes = await jikanFetch<JikanResponse>(
+        `/seasons/now?${fallbackParams.toString()}`
+      );
+      if (seasonalRes?.data?.length > 0) {
+        response = seasonalRes;
+      }
+    } catch {
+      // Ignore fallback errors and return original response
+    }
+  }
+
+  const anime = (response?.data || []).map(jikanToMalAnime);
 
   return {
     anime,
-    hasMore: response.pagination.has_next_page,
-    total: response.pagination.items.total,
+    hasMore: response?.pagination?.has_next_page || false,
+    total: response?.pagination?.items?.total || anime.length,
   };
 }
 

@@ -67,6 +67,26 @@
   color: var(--warning);
 }
 
+.trakt-converted-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.trakt-converted-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--warning, #facc15);
+}
+
 .filter-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);

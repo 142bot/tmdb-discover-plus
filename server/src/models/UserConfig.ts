@@ -13,7 +13,7 @@ const catalogSchema = new mongoose.Schema(
     type: { type: String, enum: ['movie', 'series', 'anime', 'collection'], required: true },
     source: {
       type: String,
-      enum: ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'trakt', 'kitsu'],
+      enum: ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'kitsu', 'trakt'],
       default: 'tmdb',
     },
     filters: {
@@ -149,11 +149,6 @@ const userConfigSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  // User's Trakt Client ID (encrypted, for per-user key when server key not configured)
-  traktClientIdEncrypted: {
-    type: String,
-    required: false,
-  },
   // Array of custom catalogs
   catalogs: [catalogSchema],
   // Array of IMDB dataset catalogs
@@ -180,7 +175,6 @@ const userConfigSchema = new mongoose.Schema({
     disableMalSearch: { type: Boolean, default: true },
     disableKitsuSearch: { type: Boolean, default: true },
     disableSimklSearch: { type: Boolean, default: true },
-    disableTraktSearch: { type: Boolean, default: true },
   },
   // Timestamps
   createdAt: { type: Date, default: Date.now },

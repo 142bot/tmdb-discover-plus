@@ -31,7 +31,7 @@ export interface MarketplaceEntry {
   description?: string; // optional author blurb, sanitized
   tags: string[]; // normalized lowercase tokens
   type: ContentType; // movie | series | anime | collection
-  source: SourceType; // tmdb | imdb | anilist | mal | simkl | trakt | kitsu
+  source: SourceType; // tmdb | imdb | anilist | mal | simkl | kitsu
   genres: string[]; // resolved genre NAMES for faceting (source-agnostic)
   filterFacets: string[]; // flattened facet tokens, e.g. "sort:popularity.desc"
   filters: CatalogFilters; // full filter definition needed for preview + clone

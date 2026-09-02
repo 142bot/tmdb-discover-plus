@@ -323,7 +323,6 @@ export function SettingsModal({
                       { id: 'MAL', pref: 'disableMalSearch', defaultActive: true },
                       { id: 'Kitsu', pref: 'disableKitsuSearch', defaultActive: true },
                       { id: 'Simkl', pref: 'disableSimklSearch', defaultActive: true },
-                      { id: 'Trakt', pref: 'disableTraktSearch', defaultActive: true },
                     ].map((p) => {
                       const isActive = p.defaultActive
                         ? preferences?.[p.pref] !== true

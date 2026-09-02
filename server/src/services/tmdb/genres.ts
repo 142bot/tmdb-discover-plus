@@ -40,14 +40,34 @@ export async function getGenres(
   const params: Record<string, string> = {};
   if (lang !== 'en') params.language = lang;
 
-  const data = (await tmdbFetch(`/genre/${mediaType}/list`, apiKey, params)) as {
-    genres: TmdbGenre[];
-  };
+  try {
+    const data = (await tmdbFetch(`/genre/${mediaType}/list`, apiKey, params)) as {
+      genres: TmdbGenre[];
+    };
 
-  if (!genreCache[mediaType]) genreCache[mediaType] = {};
-  genreCache[mediaType][lang] = data.genres;
+    if (data?.genres && Array.isArray(data.genres)) {
+      if (!genreCache[mediaType]) genreCache[mediaType] = {};
+      genreCache[mediaType][lang] = data.genres;
+      return data.genres;
+    }
+  } catch (err) {
+    log.warn('Failed to fetch dynamic TMDB genres, using static fallback', {
+      type: mediaType,
+      error: (err as Error).message,
+    });
+  }
 
-  return data.genres;
+  // Fallback to static genre map
+  const fallback = staticGenreMap[mediaType] || {};
+  const staticList: TmdbGenre[] = Object.entries(fallback).map(([id, name]) => ({
+    id: Number(id),
+    name: name as string,
+  }));
+  if (staticList.length > 0) {
+    if (!genreCache[mediaType]) genreCache[mediaType] = {};
+    genreCache[mediaType][lang] = staticList;
+  }
+  return staticList;
 }
 
 export function getCachedGenres(

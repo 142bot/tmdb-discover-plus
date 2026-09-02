@@ -504,51 +504,6 @@ const SIMKL_ONLY_FILTER_KEYS = [
   'simklNetwork',
 ];
 
-const TRAKT_ONLY_FILTER_KEYS = [
-  'traktListType',
-  'traktPeriod',
-  'traktCalendarType',
-  'traktCalendarDays',
-  'traktCalendarStartDate',
-  'traktCalendarEndDate',
-  'traktCalendarSort',
-  'traktListId',
-  'traktGenres',
-  'traktExcludeGenres',
-  'traktYears',
-  'traktYearMin',
-  'traktYearMax',
-  'traktRuntimes',
-  'traktRuntimeMin',
-  'traktRuntimeMax',
-  'traktCertifications',
-  'traktCountries',
-  'traktLanguages',
-  'traktNetworkIds',
-  'traktStudioIds',
-  'traktStatus',
-  'traktRatingMin',
-  'traktRatingMax',
-  'traktVotesMin',
-  'traktAiredEpisodesMin',
-  'traktAiredEpisodesMax',
-  'traktExcludeSingleSeason',
-  'traktImdbRatingMin',
-  'traktImdbRatingMax',
-  'traktTmdbRatingMin',
-  'traktTmdbRatingMax',
-  'traktRtMeterMin',
-  'traktRtMeterMax',
-  'traktMetascoreMin',
-  'traktMetascoreMax',
-  'traktImdbVotesMin',
-  'traktImdbVotesMax',
-  'traktTmdbVotesMin',
-  'traktTmdbVotesMax',
-  'traktRtUserMeterMin',
-  'traktRtUserMeterMax',
-];
-
 const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
   tmdb: [
     ...IMDB_ONLY_FILTER_KEYS,
@@ -556,7 +511,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...MAL_ONLY_FILTER_KEYS,
     ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
   ],
   imdb: [
     ...TMDB_ONLY_FILTER_KEYS,
@@ -564,7 +518,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...MAL_ONLY_FILTER_KEYS,
     ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
   ],
   anilist: [
     ...TMDB_ONLY_FILTER_KEYS,
@@ -572,7 +525,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...MAL_ONLY_FILTER_KEYS,
     ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
   ],
   mal: [
     ...TMDB_ONLY_FILTER_KEYS,
@@ -580,7 +532,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...ANILIST_ONLY_FILTER_KEYS,
     ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
   ],
   kitsu: [
     ...TMDB_ONLY_FILTER_KEYS,
@@ -588,7 +539,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
   ],
   simkl: [
     ...TMDB_ONLY_FILTER_KEYS,
@@ -596,15 +546,6 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
     ...KITSU_ONLY_FILTER_KEYS,
-    ...TRAKT_ONLY_FILTER_KEYS,
-  ],
-  trakt: [
-    ...TMDB_ONLY_FILTER_KEYS,
-    ...IMDB_ONLY_FILTER_KEYS,
-    ...ANILIST_ONLY_FILTER_KEYS,
-    ...MAL_ONLY_FILTER_KEYS,
-    ...KITSU_ONLY_FILTER_KEYS,
-    ...SIMKL_ONLY_FILTER_KEYS,
   ],
 };
 

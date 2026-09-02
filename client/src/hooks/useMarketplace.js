@@ -28,8 +28,6 @@ function previewBySource(entry, apiKey) {
       return api.previewKitsuCatalog(type, filters);
     case 'simkl':
       return api.previewSimklCatalog(type, filters);
-    case 'trakt':
-      return api.previewTraktCatalog(type, filters);
     case 'tmdb':
     default:
       return api.preview(apiKey, type, filters);

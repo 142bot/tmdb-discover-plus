@@ -160,7 +160,6 @@ export function useCatalogEditorHandlers({
   onPreviewMal,
   onPreviewKitsu,
   onPreviewSimkl,
-  onPreviewTrakt,
   selectedPeople,
   selectedCompanies,
   selectedImdbPeople,
@@ -444,14 +443,6 @@ export function useCatalogEditorHandlers({
           selectedPreviewPosterApiKey,
           selectedPreviewPosterCustomUrlPattern
         );
-      } else if (localCatalog.source === 'trakt' && onPreviewTrakt) {
-        data = await onPreviewTrakt(
-          localCatalog.type || 'movie',
-          localCatalog.filters || {},
-          selectedPreviewPosterProvider,
-          selectedPreviewPosterApiKey,
-          selectedPreviewPosterCustomUrlPattern
-        );
       } else {
         const filters = {
           ...localCatalog.filters,
@@ -492,7 +483,6 @@ export function useCatalogEditorHandlers({
     onPreviewMal,
     onPreviewKitsu,
     onPreviewSimkl,
-    onPreviewTrakt,
     previewPosterProvider,
     preferences,
     selectedPeople,

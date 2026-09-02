@@ -3,7 +3,6 @@ import { ImdbSource } from './ImdbSource.ts';
 import { AnilistSource } from './AnilistSource.ts';
 import { MalSource } from './MalSource.ts';
 import { SimklSource } from './SimklSource.ts';
-import { TraktSource } from './TraktSource.ts';
 import { KitsuSource } from './KitsuSource.ts';
 import type { IDiscoverSource } from './types.ts';
 
@@ -13,7 +12,6 @@ const SOURCE_REGISTRY = new Map<string, IDiscoverSource>([
   ['anilist', AnilistSource],
   ['mal', MalSource],
   ['simkl', SimklSource],
-  ['trakt', TraktSource],
   ['kitsu', KitsuSource],
 ]);
 

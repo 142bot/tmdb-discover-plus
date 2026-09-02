@@ -7,12 +7,6 @@ import {
   resolveOptionLabel,
   resolveSortLabel,
 } from '../utils/filterLabels';
-import {
-  formatTraktCalendarWindowLabel,
-  normalizeTraktListType,
-  supportsTraktCalendarSettings,
-  supportsTraktPeriod,
-} from '../sources/traktCapabilities';
 
 const KITSU_SORT_LABELS = {
   '-averageRating': 'Highest Rated',
@@ -129,10 +123,6 @@ export function useActiveFilters({
   simklBestFilters = [],
   simklSortOptions = [],
   simklAnimeTypes = [],
-  traktListTypes = [],
-  traktCalendarTypes = [],
-  traktCommunityMetrics = [],
-  traktNetworks = [],
 }) {
   const isImdbSource = localCatalog?.source === 'imdb';
   const isAnilistSource = localCatalog?.source === 'anilist';
@@ -1069,214 +1059,6 @@ export function useActiveFilters({
         section: 'filters',
         clear: () => update({ simklType: undefined }),
       },
-
-      // --- Trakt specific ---
-      {
-        key: 'traktListType',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          return normalizeTraktListType(filters.traktListType) !== 'calendar';
-        },
-        label: (filters) => {
-          const listType = normalizeTraktListType(filters.traktListType);
-          const allOptions = [...traktListTypes, ...traktCommunityMetrics];
-          return `List: ${getOptionLabel(allOptions, listType)}`;
-        },
-        section: 'filters',
-        clear: () =>
-          update({
-            traktListType: undefined,
-            traktCalendarType: undefined,
-            traktCalendarDays: undefined,
-            traktCalendarStartDate: undefined,
-            traktCalendarEndDate: undefined,
-            traktCalendarSort: undefined,
-          }),
-      },
-      {
-        key: 'traktPeriod',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          const listType = normalizeTraktListType(filters.traktListType);
-          return (
-            supportsTraktPeriod(listType) &&
-            !!filters.traktPeriod &&
-            filters.traktPeriod !== 'weekly'
-          );
-        },
-        label: (filters) => `Period: ${humanizeFilterValue(filters.traktPeriod)}`,
-        section: 'filters',
-        clear: () => update({ traktPeriod: undefined }),
-      },
-      {
-        key: 'traktCalendarType',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          const listType = normalizeTraktListType(filters.traktListType);
-          return supportsTraktCalendarSettings(listType) && !!filters.traktCalendarType;
-        },
-        label: (filters) =>
-          `Feed: ${getOptionLabel(traktCalendarTypes, filters.traktCalendarType)}`,
-        section: 'filters',
-        clear: () => update({ traktCalendarType: undefined }),
-      },
-      {
-        key: 'traktCalendarSort',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          const listType = normalizeTraktListType(filters.traktListType);
-          const defaultCalendarSort = 'desc';
-          return (
-            supportsTraktCalendarSettings(listType) &&
-            !!filters.traktCalendarSort &&
-            filters.traktCalendarSort !== defaultCalendarSort
-          );
-        },
-        label: (filters) =>
-          `Date Order: ${filters.traktCalendarSort === 'desc' ? 'Descending' : 'Ascending'}`,
-        section: 'filters',
-        clear: () => update({ traktCalendarSort: undefined }),
-      },
-      {
-        key: 'traktCalendarRange',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          const listType = normalizeTraktListType(filters.traktListType);
-          return (
-            supportsTraktCalendarSettings(listType) &&
-            !!(filters.traktCalendarStartDate || filters.traktCalendarEndDate)
-          );
-        },
-        label: (filters) =>
-          `Range: ${filters.traktCalendarStartDate || '...'} to ${filters.traktCalendarEndDate || '...'}`,
-        section: 'filters',
-        clear: () => update({ traktCalendarStartDate: undefined, traktCalendarEndDate: undefined }),
-      },
-      {
-        key: 'traktCalendarDays',
-        isActive: (filters) => {
-          if (source !== 'trakt') return false;
-          const listType = normalizeTraktListType(filters.traktListType);
-          if (
-            !filters.traktCalendarDays ||
-            !supportsTraktCalendarSettings(listType) ||
-            filters.traktCalendarStartDate ||
-            filters.traktCalendarEndDate
-          ) {
-            return false;
-          }
-          return !!formatTraktCalendarWindowLabel(listType, filters.traktCalendarDays);
-        },
-        label: (filters) => {
-          const listType = normalizeTraktListType(filters.traktListType);
-          return formatTraktCalendarWindowLabel(listType, filters.traktCalendarDays);
-        },
-        section: 'filters',
-        clear: () => update({ traktCalendarDays: undefined }),
-      },
-      // Cleared via UI elsewhere but never surfaced as their own chip (matches prior behavior).
-      {
-        key: 'traktCalendarStartDate',
-        isActive: () => false,
-        label: () => '',
-        section: 'filters',
-        clear: () => update({ traktCalendarStartDate: undefined }),
-      },
-      {
-        key: 'traktCalendarEndDate',
-        isActive: () => false,
-        label: () => '',
-        section: 'filters',
-        clear: () => update({ traktCalendarEndDate: undefined }),
-      },
-      {
-        key: 'traktLanguages',
-        isActive: (filters) => source === 'trakt' && filters.traktLanguages?.length,
-        label: (filters) =>
-          `Languages: ${filters.traktLanguages.map((c) => c.toUpperCase()).join(', ')}`,
-        section: 'filters',
-        clear: () => update({ traktLanguages: undefined }),
-      },
-      {
-        key: 'traktCountries',
-        isActive: (filters) => source === 'trakt' && filters.traktCountries?.length,
-        label: (filters) =>
-          `Countries: ${filters.traktCountries.map((c) => c.toUpperCase()).join(', ')}`,
-        section: 'filters',
-        clear: () => update({ traktCountries: undefined }),
-      },
-      {
-        key: 'traktNetworkIds',
-        isActive: (filters) => source === 'trakt' && filters.traktNetworkIds?.length,
-        label: (filters) => {
-          const safeNets = Array.isArray(traktNetworks) ? traktNetworks : [];
-          const names = filters.traktNetworkIds.map((id) => {
-            const net = safeNets.find((n) => n.ids?.trakt === id);
-            return net?.name || String(id);
-          });
-          const shown = names.slice(0, 2).join(', ');
-          const extra = names.length > 2 ? ` +${names.length - 2}` : '';
-          return `Networks: ${shown}${extra}`;
-        },
-        section: 'network',
-        clear: () => update({ traktNetworkIds: undefined }),
-      },
-      {
-        key: 'traktGenres',
-        isActive: (filters) => source === 'trakt' && filters.traktGenres?.length,
-        label: (filters) => `Genres: ${filters.traktGenres.length}`,
-        section: 'genres',
-        clear: () => update({ traktGenres: undefined }),
-      },
-      {
-        key: 'traktExcludeGenres',
-        isActive: (filters) => source === 'trakt' && filters.traktExcludeGenres?.length,
-        label: (filters) => `Excluded: ${filters.traktExcludeGenres.length}`,
-        section: 'genres',
-        clear: () => update({ traktExcludeGenres: undefined }),
-      },
-      {
-        key: 'traktYear',
-        isActive: (filters) =>
-          source === 'trakt' && (filters.traktYearMin != null || filters.traktYearMax != null),
-        label: (filters) =>
-          `Year: ${filters.traktYearMin ?? '...'}–${filters.traktYearMax ?? '...'}`,
-        section: 'filters',
-        clear: () => update({ traktYearMin: undefined, traktYearMax: undefined }),
-      },
-      {
-        key: 'traktRating',
-        isActive: (filters) =>
-          source === 'trakt' && !!(filters.traktRatingMin || filters.traktRatingMax),
-        label: (filters) =>
-          `Rating: ${filters.traktRatingMin ?? 0}–${filters.traktRatingMax ?? 100}`,
-        section: 'filters',
-        clear: () => update({ traktRatingMin: undefined, traktRatingMax: undefined }),
-      },
-      {
-        key: 'traktVotesMin',
-        isActive: (filters) => source === 'trakt' && !!filters.traktVotesMin,
-        label: (filters) => `Min Votes: ${filters.traktVotesMin}`,
-        section: 'ratings',
-        clear: () => update({ traktVotesMin: undefined }),
-      },
-      {
-        key: 'traktAiredEpisodes',
-        isActive: (filters) =>
-          source === 'trakt' &&
-          (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null),
-        label: (filters) =>
-          `Aired Episodes: ${filters.traktAiredEpisodesMin ?? '...'}–${filters.traktAiredEpisodesMax ?? '...'}`,
-        section: 'filters',
-        clear: () => update({ traktAiredEpisodesMin: undefined, traktAiredEpisodesMax: undefined }),
-      },
-      {
-        key: 'traktExcludeSingleSeason',
-        isActive: (filters) => source === 'trakt' && !!filters.traktExcludeSingleSeason,
-        label: () => 'Hide New / Single-Season Shows',
-        section: 'filters',
-        clear: () => update({ traktExcludeSingleSeason: undefined }),
-      },
     ];
   }, [
     localCatalog,
@@ -1314,10 +1096,6 @@ export function useActiveFilters({
     simklBestFilters,
     simklSortOptions,
     simklAnimeTypes,
-    traktListTypes,
-    traktCalendarTypes,
-    traktCommunityMetrics,
-    traktNetworks,
     isImdbSource,
     isAnilistSource,
     isCollectionCatalog,

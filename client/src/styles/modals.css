@@ -219,13 +219,9 @@
 .type-card-icon.simkl {
   color: #0ac775;
 }
-.type-card-icon.trakt {
-  color: #ed1c24;
-}
 
 .type-card.active .type-card-icon.tmdb,
 .type-card.active .type-card-icon.imdb,
-.type-card.active .type-card-icon.trakt,
 .type-card.active .type-card-icon.anilist,
 .type-card.active .type-card-icon.mal,
 .type-card.active .type-card-icon.simkl {
@@ -317,9 +313,6 @@
 }
 .source-dot.simkl {
   background: #0ac775;
-}
-.source-dot.trakt {
-  background: #ed1c24;
 }
 
 .source-pill.active .source-dot {
