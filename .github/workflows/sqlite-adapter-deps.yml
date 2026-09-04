@@ -1,0 +1,41 @@
+name: sqlite-adapter-deps
+
+on:
+  push:
+    branches:
+      - feat/sqlite-storage-adapter
+    paths:
+      - 'server/src/services/storage/SqliteAdapter.ts'
+      - '.github/workflows/sqlite-adapter-deps.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  install-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/sqlite-storage-adapter
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Add better-sqlite3 (updates package.json + lockfile)
+        working-directory: server
+        run: |
+          npm install better-sqlite3
+          npm install --save-dev @types/better-sqlite3
+
+      - name: Commit dependency changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/package.json server/package-lock.json
+          git diff --cached --quiet || git commit -m "chore(deps): add better-sqlite3 for SQLite adapter [skip ci]"
+          git push
