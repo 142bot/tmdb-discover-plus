@@ -40,8 +40,14 @@ COPY package*.json ./
 COPY server/package*.json ./server/
 
 # Install production dependencies only (skip postinstall which builds client - already done)
-RUN npm ci --omit=dev --ignore-scripts && \
-    cd server && npm ci --omit=dev --ignore-scripts
+# better-sqlite3 is a native module with no musl prebuilds and --ignore-scripts
+# suppresses its install script, so: add toolchain, rebuild its binding explicitly,
+# then drop the toolchain again - all within one layer to keep the image clean.
+RUN apk add --no-cache python3 make g++ && \
+    npm ci --omit=dev --ignore-scripts && \
+    cd server && npm ci --omit=dev --ignore-scripts && \
+    npm rebuild better-sqlite3 && \
+    apk del python3 make g++
 
 # Copy server source
 COPY server/src ./server/src
