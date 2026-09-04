@@ -69,6 +69,7 @@ export const config = Object.freeze({
     postgresUri: env('POSTGRES_URI'),
     mongodbUri: env('MONGODB_URI'),
     databaseUrl: env('DATABASE_URL'),
+    sqlitePath: env('SQLITE_PATH'),
   }),
 
   cache: Object.freeze({
