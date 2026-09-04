@@ -62,16 +62,23 @@ export function useCatalogManager(config, addToast) {
 
   const handleAddPresetCatalog = (type, preset, source) => {
     const effectiveSource = source || globalSource;
-    const isTmdb = effectiveSource !== 'imdb';
+    let filters;
+    if (effectiveSource === 'imdb') {
+      filters = { listType: preset.value };
+    } else if (effectiveSource === 'mal') {
+      filters = { listType: preset.value, malRankingType: preset.value };
+    } else {
+      filters = buildPresetFilters(type, preset.value);
+    }
     const newCatalog = {
       _id: crypto.randomUUID(),
       name: preset.label.replace(/^[^\s]+\s/, ''),
       type,
-      filters: isTmdb ? buildPresetFilters(type, preset.value) : { listType: preset.value },
+      filters,
       enabled: true,
     };
-    if (effectiveSource === 'imdb') {
-      newCatalog.source = 'imdb';
+    if (effectiveSource === 'imdb' || effectiveSource === 'mal') {
+      newCatalog.source = effectiveSource;
     }
     config.setCatalogs((prev) => [...prev, newCatalog]);
     setActiveCatalog(newCatalog);

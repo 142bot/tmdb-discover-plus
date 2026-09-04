@@ -89,9 +89,13 @@ const NON_SIMKL_KEYS = [
   'malSeason',
   'malSeasonYear',
   'malMediaType',
+  'malExcludeMediaType',
   'malStatus',
   'malSort',
   'malRating',
+  'malSfw',
+  'malAiredFrom',
+  'malAiredTo',
 ];
 
 /** @implements {import('./types').SourceDescriptor} */

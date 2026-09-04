@@ -1,5 +1,9 @@
-export function AnimeFormatSelector({ selected = [], options = [], onChange }) {
+export function AnimeFormatSelector({ selected = [], options = [], onChange, multiple = true }) {
   const toggle = (value) => {
+    if (!multiple) {
+      onChange(selected.includes(value) ? [] : [value]);
+      return;
+    }
     if (selected.includes(value)) {
       onChange(selected.filter((v) => v !== value));
     } else {

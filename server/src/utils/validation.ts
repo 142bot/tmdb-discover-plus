@@ -475,9 +475,18 @@ const MAL_ONLY_FILTER_KEYS = [
   'malSeason',
   'malSeasonYear',
   'malMediaType',
+  'malExcludeMediaType',
   'malStatus',
   'malSort',
   'malRating',
+  'malGenres',
+  'malExcludeGenres',
+  'malScoreMin',
+  'malScoreMax',
+  'malOrderBy',
+  'malSfw',
+  'malAiredFrom',
+  'malAiredTo',
 ];
 
 const KITSU_ONLY_FILTER_KEYS = [

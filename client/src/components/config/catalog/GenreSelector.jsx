@@ -15,6 +15,7 @@ export const GenreSelector = memo(function GenreSelector({
   loading,
   onRefresh,
   showMatchMode = true,
+  showLegend = true,
 }) {
   const getGenreState = (id) => {
     if (selectedGenres.includes(id)) return 'include';
@@ -58,17 +59,19 @@ export const GenreSelector = memo(function GenreSelector({
 
   return (
     <>
-      <div className="genre-instructions">
-        <span className="genre-instruction-item">
-          <span className="genre-dot neutral"></span> Click to include
-        </span>
-        <span className="genre-instruction-item">
-          <span className="genre-dot include"></span> Click again to exclude
-        </span>
-        <span className="genre-instruction-item">
-          <span className="genre-dot exclude"></span> Click again to clear
-        </span>
-      </div>
+      {showLegend && (
+        <div className="genre-instructions">
+          <span className="genre-instruction-item">
+            <span className="genre-dot neutral"></span> Click to include
+          </span>
+          <span className="genre-instruction-item">
+            <span className="genre-dot include"></span> Click again to exclude
+          </span>
+          <span className="genre-instruction-item">
+            <span className="genre-dot exclude"></span> Click again to clear
+          </span>
+        </div>
+      )}
 
       <SmoothExpand show={showMatchMode}>
         <div className={`genre-match-mode-box`}>

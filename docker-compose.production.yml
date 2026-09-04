@@ -14,7 +14,7 @@ services:
       IMDB_DATA_ATTR_K: x-rapidapi-proxy-secret
       IMDB_DATA_ATTR_H: x-rapidapi-host
       IMDB_DATA_ENABLED: "true"
-      JIKAN_API_BASE: http://jikan-api:8080/v4
+      JIKAN_API_BASE: https://jikanfortheweebs.midnightignite.me/v4
     expose:
       - "7000"
     depends_on:
@@ -22,8 +22,6 @@ services:
         condition: service_healthy
       imdb-api:
         condition: service_healthy
-      jikan-api:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:7000/health"]
       interval: 30s
@@ -52,68 +50,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
-
-  jikan-api:
-    image: jikanme/jikan-rest:latest
-    container_name: jikan-api
-    restart: unless-stopped
-    environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      APP_URL: http://localhost:8080
-      CACHING: "true"
-      CACHE_DRIVER: redis
-      REDIS_HOST: jikan-redis
-      REDIS_PORT: 6379
-      DB_CONNECTION: mongodb
-      DB_HOST: jikan-mongo
-      DB_PORT: 27017
-      DB_DATABASE: jikan
-      DB_ADMIN: jikan
-      DB_USERNAME: ""
-      DB_PASSWORD: ""
-      SCOUT_DRIVER: typesense
-      TYPESENSE_HOST: jikan-typesense
-      TYPESENSE_PORT: 8108
-      TYPESENSE_API_KEY: jikan_typesense_key_12345
-      SOURCE: local
-      SOURCE_BAD_HEALTH_THRESHOLD: 10
-      SOURCE_BAD_HEALTH_RECHECK: 10
-      SOURCE_BAD_HEALTH_RANGE: 30
-      SOURCE_GOOD_HEALTH_SCORE: 0.9
-      SOURCE_TIMEOUT: 15
-      CORS_MIDDLEWARE: "true"
-    ports:
-      - "8085:8080"
-    expose:
-      - "8080"
-    depends_on:
-      - jikan-mongo
-      - jikan-redis
-      - jikan-typesense
-
-  jikan-mongo:
-    image: mongo:6-jammy
-    container_name: jikan-mongo
-    restart: unless-stopped
-    command: ["--wiredTigerCacheSizeGB", "0.25"]
-    volumes:
-      - jikan_mongo_data:/data/db
-
-  jikan-redis:
-    image: redis:7-alpine
-    container_name: jikan-redis
-    restart: unless-stopped
-    volumes:
-      - jikan_redis_data:/data
-
-  jikan-typesense:
-    image: typesense/typesense:0.24.1
-    container_name: jikan-typesense
-    restart: unless-stopped
-    command: ["--data-dir", "/data", "--api-key", "jikan_typesense_key_12345", "--enable-cors"]
-    volumes:
-      - jikan_typesense_data:/data
 
   redis:
     image: redis:7-alpine
@@ -144,8 +80,5 @@ services:
 
 volumes:
   redis_data:
-  jikan_mongo_data:
-  jikan_redis_data:
-  jikan_typesense_data:
   caddy_data:
   caddy_config:

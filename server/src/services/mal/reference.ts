@@ -9,7 +9,7 @@ import {
   MAL_SEASONS,
 } from './types.ts';
 
-export function getGenres(): Array<{ id: number; name: string }> {
+export function getGenres(): typeof MAL_GENRES {
   return MAL_GENRES;
 }
 

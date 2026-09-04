@@ -39,10 +39,6 @@ import type {
 } from '../types/marketplace.ts';
 
 const log = createLogger('marketplaceService');
-const DISABLED_MARKETPLACE_SOURCES = new Set<SourceType>(['mal']);
-const ENABLED_MARKETPLACE_SOURCES = MARKETPLACE_SOURCES.filter(
-  (source): source is SourceType => !DISABLED_MARKETPLACE_SOURCES.has(source as SourceType)
-);
 
 /**
  * Options accepted by {@link publishCatalog}. Author-supplied description/tags
@@ -572,16 +568,9 @@ export async function searchMarketplace(
   const page = resolvePage(query.page);
 
   if (facets?.source) {
-    const requestedSources = Array.isArray(facets.source) ? facets.source : [facets.source];
-    const enabledSources = requestedSources.filter(
-      (source) => !DISABLED_MARKETPLACE_SOURCES.has(source)
-    );
-    if (enabledSources.length === 0) {
-      return { items: [], page, limit, total: 0, sort };
-    }
-    facets.source = enabledSources.length === 1 ? enabledSources[0] : enabledSources;
+    // No source-level restrictions; pass the requested facet through as-is.
   } else {
-    facets.source = ENABLED_MARKETPLACE_SOURCES;
+    facets.source = [...MARKETPLACE_SOURCES];
   }
 
   // 2. Compose the normalized adapter params. The adapter is 1-based; convert

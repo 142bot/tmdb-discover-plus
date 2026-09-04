@@ -362,7 +362,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
     !hasPresetOrigin &&
     !isCollectionModeListType;
   const supportsFullFilters = !isPresetCatalog && !isCollection;
-  const isImdbCatalog = localCatalog?.source === 'imdb';
   const previewPosterProviderHint = getPreviewPosterProviderHint(
     previewPosterProvider,
     globalPreviewPosterProvider
@@ -641,7 +640,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
             </div>
           )}
 
-          {!(isImdbCatalog && isPresetCatalog) && (
+          {!isPresetCatalog && (
             <ActiveFiltersBar
               activeFilters={activeFilters}
               onClearFilter={clearFilter}

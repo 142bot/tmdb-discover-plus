@@ -875,6 +875,13 @@ export function useActiveFilters({
         clear: () => update({ malMediaType: [] }),
       },
       {
+        key: 'malExcludeMediaType',
+        isActive: (filters) => source === 'mal' && filters.malExcludeMediaType?.length > 0,
+        label: (filters) => `Exclude Type: ${filters.malExcludeMediaType.join(', ')}`,
+        section: 'format',
+        clear: () => update({ malExcludeMediaType: [] }),
+      },
+      {
         key: 'malStatus',
         isActive: (filters) => source === 'mal' && filters.malStatus?.length > 0,
         label: (filters) => `Status: ${filters.malStatus.join(', ')}`,
@@ -887,6 +894,20 @@ export function useActiveFilters({
         label: (filters) => `Rating: ${filters.malRating}`,
         section: 'format',
         clear: () => update({ malRating: undefined }),
+      },
+      {
+        key: 'malSfw',
+        isActive: (filters) => source === 'mal' && !!filters.malSfw,
+        label: () => 'SFW only',
+        section: 'format',
+        clear: () => update({ malSfw: undefined }),
+      },
+      {
+        key: 'malAiredFrom',
+        isActive: (filters) => source === 'mal' && !!(filters.malAiredFrom || filters.malAiredTo),
+        label: (filters) => `Aired: ${filters.malAiredFrom || '…'} to ${filters.malAiredTo || '…'}`,
+        section: 'format',
+        clear: () => update({ malAiredFrom: undefined, malAiredTo: undefined }),
       },
       {
         key: 'malScore',

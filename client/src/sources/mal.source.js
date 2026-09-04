@@ -109,6 +109,7 @@ export const MAL_SOURCE = {
     malGenres: [],
     malExcludeGenres: [],
     malMediaType: [],
+    malExcludeMediaType: [],
     malStatus: [],
   },
 
@@ -181,6 +182,15 @@ export const MAL_SOURCE = {
       });
     }
 
+    if (filters.malExcludeMediaType?.length > 0) {
+      const names = filters.malExcludeMediaType.map((v) => resolveOptionLabel(malMediaTypes, v));
+      active.push({
+        key: 'malExcludeMediaType',
+        label: `Exclude Type: ${names.join(', ')}`,
+        section: 'format',
+      });
+    }
+
     if (filters.malStatus?.length > 0) {
       const names = filters.malStatus.map((v) => resolveOptionLabel(malStatuses, v));
       active.push({
@@ -194,6 +204,22 @@ export const MAL_SOURCE = {
       active.push({
         key: 'malRating',
         label: `Rating: ${resolveOptionLabel(malRatings, filters.malRating)}`,
+        section: 'format',
+      });
+    }
+
+    if (filters.malSfw) {
+      active.push({
+        key: 'malSfw',
+        label: 'SFW only',
+        section: 'format',
+      });
+    }
+
+    if (filters.malAiredFrom || filters.malAiredTo) {
+      active.push({
+        key: 'malAiredFrom',
+        label: `Aired: ${filters.malAiredFrom || '…'} to ${filters.malAiredTo || '…'}`,
         section: 'format',
       });
     }

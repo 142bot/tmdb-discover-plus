@@ -39,6 +39,15 @@ const presetIcons = {
   on_the_air: Radio,
   top_rated: Star,
   popular: Sparkles,
+  // MAL ranking presets
+  all: Sparkles,
+  airing: Radio,
+  tv: Tv,
+  movie: Film,
+  ova: Award,
+  special: Star,
+  bypopularity: Flame,
+  favorite: Heart,
 };
 
 export const CatalogSidebar = memo(function CatalogSidebar() {
@@ -61,6 +70,8 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
     presetCatalogs = { movie: [], series: [] },
     imdbPresetCatalogs = [],
     imdbEnabled = false,
+    malEnabled = false,
+    malRankingTypes = [],
   } = useTMDBData();
   const { addToast, setShowNewCatalogModal } = useAppActions();
 
@@ -73,6 +84,10 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
     presetCatalogs && typeof presetCatalogs === 'object' && !Array.isArray(presetCatalogs)
       ? presetCatalogs
       : { movie: [], series: [] };
+  const malMoviePresets = malRankingTypes.filter(
+    (r) => !['all', 'tv', 'airing', 'upcoming'].includes(r.value)
+  );
+  const malSeriesPresets = malRankingTypes.filter((r) => !['all', 'movie'].includes(r.value));
   const isMobile = useIsMobile();
   const [moviePresetsCollapsed, setMoviePresetsCollapsed] = useState(isMobile);
   const [tvPresetsCollapsed, setTvPresetsCollapsed] = useState(isMobile);
@@ -189,7 +204,7 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
       <div className="sidebar-section">
         <h4 className="sidebar-section-title">Quick Add Presets</h4>
 
-        {imdbEnabled && (
+        {(imdbEnabled || malEnabled) && (
           <div className="source-tabs" style={{ marginBottom: '12px' }}>
             <button
               type="button"
@@ -198,13 +213,24 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
             >
               <Film size={14} /> TMDB
             </button>
-            <button
-              type="button"
-              className={`source-tab ${globalSource === 'imdb' ? 'active imdb' : ''}`}
-              onClick={() => setGlobalSource('imdb')}
-            >
-              <Award size={14} /> IMDb
-            </button>
+            {imdbEnabled && (
+              <button
+                type="button"
+                className={`source-tab ${globalSource === 'imdb' ? 'active imdb' : ''}`}
+                onClick={() => setGlobalSource('imdb')}
+              >
+                <Award size={14} /> IMDb
+              </button>
+            )}
+            {malEnabled && (
+              <button
+                type="button"
+                className={`source-tab ${globalSource === 'mal' ? 'active mal' : ''}`}
+                onClick={() => setGlobalSource('mal')}
+              >
+                <Trophy size={14} /> MAL
+              </button>
+            )}
           </div>
         )}
 
@@ -229,13 +255,20 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
           <div className="preset-list">
             {(globalSource === 'tmdb'
               ? safePresetCatalogs.movie || []
-              : imdbPresetCatalogs.filter((p) => p.type === 'movie')
+              : globalSource === 'mal'
+                ? malMoviePresets
+                : imdbPresetCatalogs.filter((p) => p.type === 'movie')
             ).map((preset) => {
-              const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
+              const source =
+                globalSource === 'tmdb' ? 'tmdb' : globalSource === 'mal' ? 'mal' : 'imdb';
               const type = 'movie';
               const isAdded = safeCatalogs.some(
                 (c) =>
-                  (source === 'imdb' ? c.source === 'imdb' : !c.source || c.source === 'tmdb') &&
+                  (source === 'imdb'
+                    ? c.source === 'imdb'
+                    : source === 'mal'
+                      ? c.source === 'mal'
+                      : !c.source || c.source === 'tmdb') &&
                   (c.filters?.listType === preset.value ||
                     c.filters?.presetOrigin === preset.value) &&
                   c.type === type
@@ -247,10 +280,10 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
               return (
                 <button
                   key={`${source}-${preset.value}`}
-                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
+                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${source === 'mal' ? 'preset-item--mal' : ''} ${isAdded ? 'added' : ''}`}
                   onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
                   disabled={isAdded}
-                  title={isAdded ? 'Already added' : preset.description}
+                  title={isAdded ? 'Already added' : preset.description || preset.label}
                 >
                   <IconComponent size={14} />
                   <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>
@@ -282,13 +315,20 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
           <div className="preset-list">
             {(globalSource === 'tmdb'
               ? safePresetCatalogs.series || []
-              : imdbPresetCatalogs.filter((p) => p.type === 'series')
+              : globalSource === 'mal'
+                ? malSeriesPresets
+                : imdbPresetCatalogs.filter((p) => p.type === 'series')
             ).map((preset) => {
-              const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
+              const source =
+                globalSource === 'tmdb' ? 'tmdb' : globalSource === 'mal' ? 'mal' : 'imdb';
               const type = 'series';
               const isAdded = safeCatalogs.some(
                 (c) =>
-                  (source === 'imdb' ? c.source === 'imdb' : !c.source || c.source === 'tmdb') &&
+                  (source === 'imdb'
+                    ? c.source === 'imdb'
+                    : source === 'mal'
+                      ? c.source === 'mal'
+                      : !c.source || c.source === 'tmdb') &&
                   (c.filters?.listType === preset.value ||
                     c.filters?.presetOrigin === preset.value) &&
                   c.type === type
@@ -300,10 +340,10 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
               return (
                 <button
                   key={`${source}-${preset.value}`}
-                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
+                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${source === 'mal' ? 'preset-item--mal' : ''} ${isAdded ? 'added' : ''}`}
                   onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
                   disabled={isAdded}
-                  title={isAdded ? 'Already added' : preset.description}
+                  title={isAdded ? 'Already added' : preset.description || preset.label}
                 >
                   <IconComponent size={14} />
                   <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>

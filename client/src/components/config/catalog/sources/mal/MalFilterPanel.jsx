@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { Settings, Calendar, Sparkles, Layers, Star } from 'lucide-react';
+import { Calendar, Sparkles, Layers, Star } from 'lucide-react';
 import { FilterSection } from '../../FilterSection';
 import { GenreSelector } from '../../GenreSelector';
 import { AnimeSeasonSelector } from '../../shared/AnimeSeasonSelector';
@@ -7,6 +7,7 @@ import { AnimeFormatSelector } from '../../shared/AnimeFormatSelector';
 import { StremioExtras } from '../../StremioExtras';
 import { SearchableSelect } from '../../../../forms/SearchableSelect';
 import { RangeSlider } from '../../../../forms/RangeSlider';
+import { Checkbox } from '../../../../forms/Checkbox';
 import { LabelWithTooltip } from '../../../../forms/Tooltip';
 
 const MAL_SEASON_OPTIONS = [
@@ -22,12 +23,13 @@ export function MalFilterPanel({
   expandedSections,
   onToggleSection,
   malGenres = [],
-  malRankingTypes = [],
   malSortOptions = [],
   malOrderByOptions = [],
   malMediaTypes = [],
   malStatuses = [],
   malRatings = [],
+  isPresetCatalog = false,
+  supportsFullFilters = true,
 }) {
   const filters = localCatalog?.filters || {};
   const type = localCatalog?.type || 'movie';
@@ -38,24 +40,14 @@ export function MalFilterPanel({
     return malMediaTypes.filter((m) => m.value !== 'movie');
   }, [malMediaTypes, type]);
 
-  const availableRankingTypes = useMemo(() => {
-    if (type === 'anime') return malRankingTypes;
-    if (type === 'movie')
-      return malRankingTypes.filter((r) => !['all', 'tv', 'airing', 'upcoming'].includes(r.value));
-    return malRankingTypes.filter((r) => !['all', 'movie'].includes(r.value));
-  }, [malRankingTypes, type]);
-
-  const rankingValue = useMemo(() => {
-    const current = filters.malRankingType || 'all';
-    if (type === 'anime') return current;
-    if (current === 'all') return type === 'movie' ? 'movie' : 'tv';
-    return current;
-  }, [filters.malRankingType, type]);
-
-  const malGenreObjects = useMemo(
-    () => malGenres.map((g) => ({ id: g.id, name: g.name })),
-    [malGenres]
-  );
+  const malGenreGroups = useMemo(() => {
+    const groups = { genre: [], theme: [], demographic: [] };
+    for (const g of malGenres) {
+      const bucket = g.category === 'demographic' || g.category === 'theme' ? g.category : 'genre';
+      groups[bucket].push({ id: g.id, name: g.name });
+    }
+    return groups;
+  }, [malGenres]);
 
   const handleScoreChange = useCallback(
     ([min, max]) => {
@@ -65,10 +57,63 @@ export function MalFilterPanel({
     [onFiltersChange]
   );
 
-  const getRankingBadge = () => (rankingValue && rankingValue !== 'all' ? 1 : 0);
-
   const getGenreBadge = () =>
     (filters.malGenres || []).length + (filters.malExcludeGenres || []).length;
+
+  const handleGenreInclude = useCallback(
+    (genreId) => {
+      const current = filters.malGenres || [];
+      const excluded = filters.malExcludeGenres || [];
+      if (current.includes(genreId)) {
+        onFiltersChange(
+          'malGenres',
+          current.filter((g) => g !== genreId)
+        );
+      } else if (excluded.includes(genreId)) {
+        onFiltersChange(
+          'malExcludeGenres',
+          excluded.filter((g) => g !== genreId)
+        );
+      } else {
+        onFiltersChange('malGenres', [...current, genreId]);
+      }
+    },
+    [filters.malGenres, filters.malExcludeGenres, onFiltersChange]
+  );
+
+  const handleGenreExclude = useCallback(
+    (genreId) => {
+      const current = filters.malGenres || [];
+      const excluded = filters.malExcludeGenres || [];
+      if (excluded.includes(genreId)) {
+        onFiltersChange(
+          'malExcludeGenres',
+          excluded.filter((g) => g !== genreId)
+        );
+      } else {
+        onFiltersChange(
+          'malGenres',
+          current.filter((g) => g !== genreId)
+        );
+        onFiltersChange('malExcludeGenres', [...excluded, genreId]);
+      }
+    },
+    [filters.malGenres, filters.malExcludeGenres, onFiltersChange]
+  );
+
+  const handleGenreClear = useCallback(
+    (genreId) => {
+      onFiltersChange(
+        'malGenres',
+        (filters.malGenres || []).filter((g) => g !== genreId)
+      );
+      onFiltersChange(
+        'malExcludeGenres',
+        (filters.malExcludeGenres || []).filter((g) => g !== genreId)
+      );
+    },
+    [filters.malGenres, filters.malExcludeGenres, onFiltersChange]
+  );
 
   const getSeasonBadge = () => {
     let count = 0;
@@ -81,8 +126,11 @@ export function MalFilterPanel({
   const getFormatBadge = () => {
     let count = 0;
     if ((filters.malMediaType || []).length > 0) count++;
+    if ((filters.malExcludeMediaType || []).length > 0) count++;
     if ((filters.malStatus || []).length > 0) count++;
     if (filters.malRating) count++;
+    if (filters.malSfw) count++;
+    if (filters.malAiredFrom || filters.malAiredTo) count++;
     return count;
   };
 
@@ -94,174 +142,250 @@ export function MalFilterPanel({
     return count;
   };
 
-  const hasAdvancedFilters =
-    (filters.malGenres || []).length > 0 ||
-    (filters.malExcludeGenres || []).length > 0 ||
-    (filters.malStatus || []).length > 0 ||
-    (filters.malMediaType || []).length > 0 ||
-    filters.malRating ||
-    (filters.malScoreMin != null && filters.malScoreMin > 0) ||
-    (filters.malScoreMax != null && filters.malScoreMax < 10) ||
-    filters.malOrderBy;
-
   return (
     <>
-      {!hasAdvancedFilters && (
+      {supportsFullFilters && (
         <FilterSection
-          id="ranking"
-          title="Ranking"
-          description="Choose a MAL ranking type"
-          icon={Settings}
-          isOpen={expandedSections?.ranking}
+          id="filters"
+          title="Sort & Filter"
+          description="Score range and result ordering"
+          icon={Star}
+          isOpen={expandedSections?.filters}
           onToggle={onToggleSection}
-          badgeCount={getRankingBadge()}
+          badgeCount={getScoreBadge()}
         >
-          <div className="filter-grid">
+          <RangeSlider
+            label="Score Range"
+            min={0}
+            max={10}
+            step={0.5}
+            value={[filters.malScoreMin || 0, filters.malScoreMax || 10]}
+            onChange={handleScoreChange}
+          />
+
+          <div className="filter-spacer" />
+
+          {malOrderByOptions.length > 0 && (
             <div className="filter-group">
-              <LabelWithTooltip
-                label="Ranking Type"
-                tooltip="Select from MAL's curated ranking lists. Disabled when using advanced filters (genres, type, status, etc.)."
-              />
+              <LabelWithTooltip label="Order By" tooltip="How to order browse results." />
               <SearchableSelect
-                options={availableRankingTypes}
-                value={rankingValue}
-                onChange={(value) => onFiltersChange('malRankingType', value)}
-                placeholder="All"
+                options={malOrderByOptions}
+                value={filters.malOrderBy || ''}
+                onChange={(val) => onFiltersChange('malOrderBy', val || undefined)}
+                placeholder="Score (default)"
                 searchPlaceholder="Search..."
                 labelKey="label"
                 valueKey="value"
-                allowClear={false}
+              />
+            </div>
+          )}
+        </FilterSection>
+      )}
+
+      {supportsFullFilters && (
+        <FilterSection
+          id="genres"
+          title="Genres"
+          description="Select genres to include or exclude"
+          icon={Sparkles}
+          isOpen={expandedSections?.genres}
+          onToggle={onToggleSection}
+          badgeCount={getGenreBadge()}
+        >
+          <div className="genre-instructions">
+            <span className="genre-instruction-item">
+              <span className="genre-dot neutral"></span> Click to include
+            </span>
+            <span className="genre-instruction-item">
+              <span className="genre-dot include"></span> Click again to exclude
+            </span>
+            <span className="genre-instruction-item">
+              <span className="genre-dot exclude"></span> Click again to clear
+            </span>
+          </div>
+
+          <div className="filter-group">
+            <LabelWithTooltip
+              label="Genres"
+              tooltip="Broad genre categories (Action, Romance, Comedy, etc.)."
+            />
+            <GenreSelector
+              genres={malGenreGroups.genre}
+              selectedGenres={filters.malGenres || []}
+              excludedGenres={filters.malExcludeGenres || []}
+              genreMatchMode="any"
+              onInclude={handleGenreInclude}
+              onExclude={handleGenreExclude}
+              onClear={handleGenreClear}
+              onSetMatchMode={() => {}}
+              showMatchMode={false}
+              showLegend={false}
+              loading={false}
+              onRefresh={() => {}}
+            />
+          </div>
+
+          {malGenreGroups.theme.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Themes"
+                tooltip="Narrower thematic tags (Isekai, Mecha, Harem, Time Travel, etc.)."
+              />
+              <GenreSelector
+                genres={malGenreGroups.theme}
+                selectedGenres={filters.malGenres || []}
+                excludedGenres={filters.malExcludeGenres || []}
+                genreMatchMode="any"
+                onInclude={handleGenreInclude}
+                onExclude={handleGenreExclude}
+                onClear={handleGenreClear}
+                onSetMatchMode={() => {}}
+                showMatchMode={false}
+                showLegend={false}
+                loading={false}
+                onRefresh={() => {}}
+              />
+            </div>
+          )}
+
+          {malGenreGroups.demographic.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Demographics"
+                tooltip="Target audience demographic (Shounen, Seinen, Josei, Shoujo, Kids)."
+              />
+              <GenreSelector
+                genres={malGenreGroups.demographic}
+                selectedGenres={filters.malGenres || []}
+                excludedGenres={filters.malExcludeGenres || []}
+                genreMatchMode="any"
+                onInclude={handleGenreInclude}
+                onExclude={handleGenreExclude}
+                onClear={handleGenreClear}
+                onSetMatchMode={() => {}}
+                showMatchMode={false}
+                showLegend={false}
+                loading={false}
+                onRefresh={() => {}}
+              />
+            </div>
+          )}
+        </FilterSection>
+      )}
+
+      {isPresetCatalog && (
+        <div className="preset-empty-state">
+          <Sparkles size={32} className="preset-empty-icon" />
+          <span className="preset-empty-text">
+            This is a curated preset from MAL and cannot be modified.
+          </span>
+        </div>
+      )}
+
+      {supportsFullFilters && (
+        <FilterSection
+          id="format"
+          title="Type & Status"
+          description="Media type, airing status, and content rating"
+          icon={Layers}
+          isOpen={expandedSections?.format}
+          onToggle={onToggleSection}
+          badgeCount={getFormatBadge()}
+        >
+          {availableMediaTypes.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Media Type"
+                tooltip="Filter by media type: TV, Movie, OVA, ONA, Special, Music."
+              />
+              <AnimeFormatSelector
+                selected={filters.malMediaType || []}
+                options={availableMediaTypes}
+                onChange={(mediaTypes) => onFiltersChange('malMediaType', mediaTypes)}
+              />
+            </div>
+          )}
+
+          {availableMediaTypes.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Exclude Media Type"
+                tooltip="Hide results matching these media types, independent of the include list above."
+              />
+              <AnimeFormatSelector
+                selected={filters.malExcludeMediaType || []}
+                options={availableMediaTypes}
+                onChange={(mediaTypes) => onFiltersChange('malExcludeMediaType', mediaTypes)}
+              />
+            </div>
+          )}
+
+          {malStatuses.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Status"
+                tooltip="Filter by airing status: Airing, Finished, Upcoming. Jikan only supports one status at a time."
+              />
+              <AnimeFormatSelector
+                selected={filters.malStatus || []}
+                options={malStatuses}
+                onChange={(statuses) => onFiltersChange('malStatus', statuses)}
+                multiple={false}
+              />
+            </div>
+          )}
+
+          {malRatings.length > 0 && (
+            <div className="filter-group">
+              <LabelWithTooltip
+                label="Content Rating"
+                tooltip="Filter by content rating: G, PG, PG-13, R, R+."
+              />
+              <SearchableSelect
+                options={malRatings}
+                value={filters.malRating || ''}
+                onChange={(val) => onFiltersChange('malRating', val || undefined)}
+                placeholder="Any Rating"
+                searchPlaceholder="Search..."
+                labelKey="label"
+                valueKey="value"
+              />
+            </div>
+          )}
+
+          <div className="filter-group">
+            <Checkbox
+              checked={Boolean(filters.malSfw)}
+              onChange={(checked) => onFiltersChange('malSfw', checked || undefined)}
+              label="SFW only"
+              tooltip="Hide Hentai/Erotica entries from results."
+            />
+          </div>
+
+          <div className="filter-group">
+            <LabelWithTooltip
+              label="Aired Between"
+              tooltip="Restrict results to anime that aired within this date range."
+            />
+            <div className="filter-grid">
+              <input
+                type="date"
+                className="input"
+                value={filters.malAiredFrom || ''}
+                onChange={(e) => onFiltersChange('malAiredFrom', e.target.value || undefined)}
+              />
+              <input
+                type="date"
+                className="input"
+                value={filters.malAiredTo || ''}
+                onChange={(e) => onFiltersChange('malAiredTo', e.target.value || undefined)}
               />
             </div>
           </div>
         </FilterSection>
       )}
 
-      <FilterSection
-        id="genres"
-        title="Genres"
-        description="Select genres to include or exclude"
-        icon={Sparkles}
-        isOpen={expandedSections?.genres}
-        onToggle={onToggleSection}
-        badgeCount={getGenreBadge()}
-      >
-        <GenreSelector
-          genres={malGenreObjects}
-          selectedGenres={filters.malGenres || []}
-          excludedGenres={filters.malExcludeGenres || []}
-          genreMatchMode="any"
-          onInclude={(genreId) => {
-            const current = filters.malGenres || [];
-            const excluded = filters.malExcludeGenres || [];
-            if (current.includes(genreId)) {
-              onFiltersChange(
-                'malGenres',
-                current.filter((g) => g !== genreId)
-              );
-            } else if (excluded.includes(genreId)) {
-              onFiltersChange(
-                'malExcludeGenres',
-                excluded.filter((g) => g !== genreId)
-              );
-            } else {
-              onFiltersChange('malGenres', [...current, genreId]);
-            }
-          }}
-          onExclude={(genreId) => {
-            const current = filters.malGenres || [];
-            const excluded = filters.malExcludeGenres || [];
-            if (excluded.includes(genreId)) {
-              onFiltersChange(
-                'malExcludeGenres',
-                excluded.filter((g) => g !== genreId)
-              );
-            } else {
-              onFiltersChange(
-                'malGenres',
-                current.filter((g) => g !== genreId)
-              );
-              onFiltersChange('malExcludeGenres', [...excluded, genreId]);
-            }
-          }}
-          onClear={(genreId) => {
-            onFiltersChange(
-              'malGenres',
-              (filters.malGenres || []).filter((g) => g !== genreId)
-            );
-            onFiltersChange(
-              'malExcludeGenres',
-              (filters.malExcludeGenres || []).filter((g) => g !== genreId)
-            );
-          }}
-          onSetMatchMode={() => {}}
-          showMatchMode={false}
-          loading={false}
-          onRefresh={() => {}}
-        />
-        {hasAdvancedFilters && (
-          <p className="text-secondary" style={{ fontSize: '11px', marginTop: '6px' }}>
-            Using advanced browse mode. Ranking type is ignored.
-          </p>
-        )}
-      </FilterSection>
-
-      <FilterSection
-        id="format"
-        title="Type & Status"
-        description="Media type, airing status, and content rating"
-        icon={Layers}
-        isOpen={expandedSections?.format}
-        onToggle={onToggleSection}
-        badgeCount={getFormatBadge()}
-      >
-        {availableMediaTypes.length > 0 && (
-          <div className="filter-group">
-            <LabelWithTooltip
-              label="Media Type"
-              tooltip="Filter by media type: TV, Movie, OVA, ONA, Special, Music."
-            />
-            <AnimeFormatSelector
-              selected={filters.malMediaType || []}
-              options={availableMediaTypes}
-            />
-          </div>
-        )}
-
-        {malStatuses.length > 0 && (
-          <div className="filter-group">
-            <LabelWithTooltip
-              label="Status"
-              tooltip="Filter by airing status: Airing, Finished, Upcoming."
-            />
-            <AnimeFormatSelector
-              selected={filters.malStatus || []}
-              options={malStatuses}
-              onChange={(statuses) => onFiltersChange('malStatus', statuses)}
-            />
-          </div>
-        )}
-
-        {malRatings.length > 0 && (
-          <div className="filter-group">
-            <LabelWithTooltip
-              label="Content Rating"
-              tooltip="Filter by content rating: G, PG, PG-13, R, R+."
-            />
-            <SearchableSelect
-              options={malRatings}
-              value={filters.malRating || ''}
-              onChange={(val) => onFiltersChange('malRating', val || undefined)}
-              placeholder="Any Rating"
-              searchPlaceholder="Search..."
-              labelKey="label"
-              valueKey="value"
-            />
-          </div>
-        )}
-      </FilterSection>
-
-      {type === 'series' && (
+      {type === 'series' && supportsFullFilters && (
         <FilterSection
           id="season"
           title="Season"
@@ -275,7 +399,7 @@ export function MalFilterPanel({
             <div className="filter-group">
               <LabelWithTooltip
                 label="Seasonal Anime"
-                tooltip="Filter by anime season. When a season is selected, ranking and advanced filters are ignored."
+                tooltip="Filter by anime season. When a season is selected, other advanced filters are ignored."
               />
               <AnimeSeasonSelector
                 season={filters.malSeason}
@@ -285,7 +409,7 @@ export function MalFilterPanel({
                 seasonOptions={MAL_SEASON_OPTIONS}
               />
               <p className="text-secondary" style={{ fontSize: '11px', marginTop: '6px' }}>
-                When a season is selected, ranking/browse filters are overridden
+                When a season is selected, browse filters are overridden
               </p>
             </div>
 
@@ -294,7 +418,7 @@ export function MalFilterPanel({
                 <LabelWithTooltip label="Sort" tooltip="How to sort seasonal results." />
                 <SearchableSelect
                   options={malSortOptions}
-                  value={filters.malSort || 'anime_num_list_users'}
+                  value={filters.malSort || 'members'}
                   onChange={(value) => onFiltersChange('malSort', value)}
                   placeholder="Most Listed"
                   searchPlaceholder="Search..."
@@ -307,45 +431,6 @@ export function MalFilterPanel({
           </div>
         </FilterSection>
       )}
-
-      <FilterSection
-        id="score"
-        title="Score & Sorting"
-        description="Filter by score range and sort results"
-        icon={Star}
-        isOpen={expandedSections?.score}
-        onToggle={onToggleSection}
-        badgeCount={getScoreBadge()}
-      >
-        <RangeSlider
-          label="Score Range"
-          min={0}
-          max={10}
-          step={0.5}
-          value={[filters.malScoreMin || 0, filters.malScoreMax || 10]}
-          onChange={handleScoreChange}
-        />
-
-        <div className="filter-spacer" />
-
-        {malOrderByOptions.length > 0 && (
-          <div className="filter-group">
-            <LabelWithTooltip
-              label="Order By"
-              tooltip="How to order browse results. Only applies when using advanced filters."
-            />
-            <SearchableSelect
-              options={malOrderByOptions}
-              value={filters.malOrderBy || ''}
-              onChange={(val) => onFiltersChange('malOrderBy', val || undefined)}
-              placeholder="Score (default)"
-              searchPlaceholder="Search..."
-              labelKey="label"
-              valueKey="value"
-            />
-          </div>
-        )}
-      </FilterSection>
 
       <FilterSection
         id="extras"

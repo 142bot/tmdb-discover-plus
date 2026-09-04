@@ -200,6 +200,7 @@ export interface MalCatalogFilters extends BaseCatalogFilters {
   malSeason?: string;
   malSeasonYear?: number;
   malMediaType?: string[];
+  malExcludeMediaType?: string[];
   malStatus?: string[];
   malSort?: string;
   malRating?: string;
@@ -208,6 +209,9 @@ export interface MalCatalogFilters extends BaseCatalogFilters {
   malScoreMin?: number;
   malScoreMax?: number;
   malOrderBy?: string;
+  malSfw?: boolean;
+  malAiredFrom?: string;
+  malAiredTo?: string;
 }
 
 export interface KitsuCatalogFilters extends BaseCatalogFilters {

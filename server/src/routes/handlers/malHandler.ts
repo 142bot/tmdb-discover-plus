@@ -170,6 +170,20 @@ export async function handleMalCatalogRequest(
 
     metas = await applyArtworkOverridesToMetaPreviews(metas, artworkOptions);
 
+    if (metas.length === 0) {
+      log.debug('Skipping cache write for empty MAL catalog response', {
+        catalogId,
+        type,
+        page,
+      });
+      res.set(
+        'Cache-Control',
+        `max-age=${CACHE_TTLS.CATALOG_HEADER}, stale-while-revalidate=${CACHE_TTLS.CATALOG_STALE_REVALIDATE}, stale-if-error=${CACHE_TTLS.CATALOG_STALE_IF_ERROR}`
+      );
+      res.json({ metas: [] });
+      return;
+    }
+
     const response = { metas };
 
     const ttl = catalogServerTtl('discover');

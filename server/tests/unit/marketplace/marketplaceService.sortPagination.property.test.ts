@@ -99,8 +99,6 @@ type EntryDraft = {
 // single max-size page (limit 50), large enough to span many pages.
 const draftsArb = fc.array(entryDraftArb, { minLength: 1, maxLength: 40 });
 
-const enabledDrafts = (drafts: EntryDraft[]) => drafts.filter((draft) => draft.source !== 'mal');
-
 /** Build a fully-formed, searchable (public + active) Marketplace_Entry. */
 function buildEntry(draft: EntryDraft): MarketplaceEntry {
   const marketplaceId = crypto.randomUUID();
@@ -240,7 +238,7 @@ describe('marketplaceService sort total order & stable pagination (Property 10 â
           // Single max-size page returns the full ordered list (dataset <= 40).
           const full = await searchMarketplace({ sort, page: 0, limit: 50 });
           expect(full.sort).toBe(sort);
-          expect(full.items.length).toBe(enabledDrafts(drafts).length);
+          expect(full.items.length).toBe(drafts.length);
           assertTotalOrder(sort, full.items as Card[]);
         }
       }),
@@ -266,7 +264,7 @@ describe('marketplaceService sort total order & stable pagination (Property 10 â
           // Reference ordering: the full result in a single page.
           const reference = await searchMarketplace({ sort, page: 0, limit: 50 });
           const referenceIds = reference.items.map((c) => c.marketplaceId);
-          expect(referenceIds.length).toBe(enabledDrafts(drafts).length);
+          expect(referenceIds.length).toBe(drafts.length);
 
           for (const pageSize of [1, 2, 3, 7]) {
             const pagedIds = await paginateAll(sort, pageSize);

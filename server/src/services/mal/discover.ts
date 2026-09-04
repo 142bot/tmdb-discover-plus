@@ -7,6 +7,7 @@ import type { ContentType } from '../../types/common.ts';
 
 const log = createLogger('mal:discover');
 const PAGE_SIZE = 25; // Jikan default/max page size
+const SUPPORTED_JIKAN_TYPES = new Set(['tv', 'movie', 'ova', 'special', 'ona', 'music']);
 
 export interface MalDiscoverResult {
   anime: MalAnime[];
@@ -40,6 +41,26 @@ function contentTypeToJikanType(type: ContentType): string | null {
   return 'tv';
 }
 
+function normalizeJikanSort(sort?: string): { orderBy: string; direction: 'asc' | 'desc' } {
+  const normalized = String(sort || '')
+    .trim()
+    .toLowerCase();
+
+  if (normalized === 'anime_score' || normalized === 'score') {
+    return { orderBy: 'score', direction: 'desc' };
+  }
+
+  if (normalized === 'anime_num_list_users' || normalized === 'members') {
+    return { orderBy: 'members', direction: 'desc' };
+  }
+
+  if (normalized === 'asc' || normalized === 'desc') {
+    return { orderBy: 'score', direction: normalized };
+  }
+
+  return { orderBy: 'score', direction: 'desc' };
+}
+
 /**
  * /top/anime - Rankings with native type + filter support
  * Jikan supports combining type + filter, so "Most Popular Movies" works directly.
@@ -52,8 +73,8 @@ export async function getRanking(
   const params = new URLSearchParams();
   params.set('page', String(page));
 
-  // Ranking types that ARE a type filter (tv, movie, ova, special)
-  const typeRankings = ['tv', 'movie', 'ova', 'special', 'ona', 'music'];
+  // Ranking types that ARE a type filter; these are the values Jikan supports for the /anime type field.
+  const typeRankings = [...SUPPORTED_JIKAN_TYPES];
   // Ranking types that ARE a filter (airing, upcoming, bypopularity, favorite)
   const filterRankings = ['airing', 'upcoming', 'bypopularity', 'favorite'];
 
@@ -135,8 +156,12 @@ export async function getSeasonal(
   const jikanSeasonType = contentTypeToJikanType(type);
   if (jikanSeasonType) params.set('filter', jikanSeasonType);
 
+  const { orderBy, direction } = normalizeJikanSort(sort);
+  params.set('order_by', orderBy);
+  params.set('sort', direction);
+
   const path = `/seasons/${year}/${season}?${params.toString()}`;
-  log.debug('Jikan seasonal', { year, season, type, page });
+  log.debug('Jikan seasonal', { year, season, type, page, orderBy, direction });
 
   const response = await jikanFetch<JikanResponse>(path);
   const anime = response.data.map(jikanToMalAnime);
@@ -190,12 +215,14 @@ export async function browseAnime(
   params.set('page', String(page));
 
   // Media type:
-  // - If user explicitly picked one, use it.
+  // - If user picked one, use `type`; multiple picks use the comma-separated `types` (mutually exclusive with `type`).
   // - For movie catalogs, default to movie.
   // - For series catalogs, omit type to allow TV/OVA/ONA/special results,
   //   then filter out movies client-side after fetch.
   let shouldFilterOutMovies = false;
-  if (filters.malMediaType && filters.malMediaType.length > 0) {
+  if (filters.malMediaType && filters.malMediaType.length > 1) {
+    params.set('types', filters.malMediaType.join(','));
+  } else if (filters.malMediaType && filters.malMediaType.length > 0) {
     params.set('type', filters.malMediaType[0]);
   } else if (type === 'movie') {
     const jikanBrowseType = contentTypeToJikanType(type);
@@ -204,7 +231,12 @@ export async function browseAnime(
     shouldFilterOutMovies = true;
   }
 
-  // Status
+  // Exclude media type(s) - independent of `type`/`types`
+  if (filters.malExcludeMediaType && filters.malExcludeMediaType.length > 0) {
+    params.set('exclude_types', filters.malExcludeMediaType.join(','));
+  }
+
+  // Status (Jikan only supports one at a time, no `statuses` equivalent)
   if (filters.malStatus && filters.malStatus.length > 0) {
     params.set('status', filters.malStatus[0]);
   }
@@ -212,6 +244,19 @@ export async function browseAnime(
   // Rating
   if (filters.malRating) {
     params.set('rating', filters.malRating);
+  }
+
+  // SFW-only toggle (hides adult/hentai entries)
+  if (filters.malSfw) {
+    params.set('sfw', 'true');
+  }
+
+  // Aired date range (YYYY-MM-DD, YYYY-MM, or YYYY)
+  if (filters.malAiredFrom) {
+    params.set('start_date', filters.malAiredFrom);
+  }
+  if (filters.malAiredTo) {
+    params.set('end_date', filters.malAiredTo);
   }
 
   // Genres (include)
@@ -233,19 +278,30 @@ export async function browseAnime(
   }
 
   // Order by + sort direction
+  const browseSort = normalizeJikanSort(filters.malSort || filters.malOrderBy);
   if (filters.malOrderBy) {
     params.set('order_by', filters.malOrderBy);
-    params.set('sort', 'desc');
   } else {
-    params.set('order_by', 'score');
-    params.set('sort', 'desc');
+    params.set('order_by', browseSort.orderBy);
   }
+  params.set('sort', browseSort.direction);
 
   const path = `/anime?${params.toString()}`;
   log.debug('Jikan browse', { type, page, filters: Object.fromEntries(params) });
 
   const response = await jikanFetch<JikanResponse>(path);
   let anime = response.data.map(jikanToMalAnime);
+
+  if (anime.length === 0) {
+    const requestedType =
+      filters.malMediaType && filters.malMediaType.length === 1 ? filters.malMediaType[0] : null;
+    if (requestedType && SUPPORTED_JIKAN_TYPES.has(requestedType)) {
+      const fallback = await getRanking(requestedType, type, page);
+      if (fallback.anime.length > 0) {
+        return fallback;
+      }
+    }
+  }
 
   if (shouldFilterOutMovies) {
     anime = anime.filter((item) => item.media_type !== 'movie');
@@ -282,9 +338,13 @@ export async function discover(
       (filters.malExcludeGenres && filters.malExcludeGenres.length > 0) ||
       (filters.malStatus && filters.malStatus.length > 0) ||
       (filters.malMediaType && filters.malMediaType.length > 0) ||
+      (filters.malExcludeMediaType && filters.malExcludeMediaType.length > 0) ||
       filters.malRating ||
       (filters.malScoreMin != null && filters.malScoreMin > 0) ||
       (filters.malScoreMax != null && filters.malScoreMax < 10) ||
+      filters.malSfw ||
+      filters.malAiredFrom ||
+      filters.malAiredTo ||
       filters.malOrderBy;
 
     if (hasAdvancedFilters) {
