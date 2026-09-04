@@ -1,3 +1,4 @@
+import { SqliteAdapter } from './SqliteAdapter.ts';
 import { PostgresAdapter } from './PostgresAdapter.ts';
 import { MemoryAdapter } from './MemoryAdapter.ts';
 import { createLogger } from '../../utils/logger.ts';
