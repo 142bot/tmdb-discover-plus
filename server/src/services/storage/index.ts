@@ -14,8 +14,12 @@ export async function initStorage(): Promise<IStorageAdapter> {
   const mongoUri = config.database.mongodbUri;
   const postgresUri = config.database.postgresUri;
   const driver = config.database.driver;
+  const sqlitePath = config.database.sqlitePath;
 
-  if (driver === 'postgres' && postgresUri) {
+    if (driver === 'sqlite' && sqlitePath) {
+    log.info('Initializing SQLite Adapter (Explicit)');
+    storageInstance = new SqliteAdapter(sqlitePath);
+  } else if (driver === 'postgres' && postgresUri) {
     log.info('Initializing Postgres Adapter (Explicit)');
     storageInstance = new PostgresAdapter(postgresUri);
   } else if (driver === 'mongo' && mongoUri) {
