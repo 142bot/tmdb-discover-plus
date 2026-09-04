@@ -42,6 +42,8 @@ Storage backend selection priority: explicit `DATABASE_DRIVER` → auto-detect f
 | `POSTGRES_URI`    | PostgreSQL connection string. Required when `DATABASE_DRIVER=postgres`.   | _(empty)_       |
 | `MONGODB_URI`     | MongoDB connection string. Required when `DATABASE_DRIVER=mongo`.         | _(empty)_       |
 | `DATABASE_URL`    | Generic database URL (alternative to the driver-specific variables above) | _(empty)_       |
+| `SQLITE_PATH`       | SQLite database file path. Required when `DATABASE_DRIVER=sqlite`.      | _(empty)_       |
+
 
 ## Cache & Redis
 
