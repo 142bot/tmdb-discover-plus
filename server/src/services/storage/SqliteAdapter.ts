@@ -16,6 +16,10 @@
  * Optional follow-up: an FTS5 trigram virtual table over name/description
  * can serve as an indexed recall pre-filter ahead of JS scoring, narrowing
  * the candidate set for large marketplaces without changing semantics.
+ *
+ * NOTE: the server runs under `node --experimental-strip-types` (strip-only
+ * mode), which rejects code-generating TS syntax such as parameter
+ * properties. Keep this file to erasable syntax only.
  */
 
 import fs from 'node:fs';
@@ -58,8 +62,11 @@ interface CountRow {
 
 export class SqliteAdapter implements IStorageAdapter {
   private db: Database.Database | null = null;
+  private readonly filePath: string;
 
-  constructor(private readonly filePath: string) {}
+  constructor(filePath: string) {
+    this.filePath = filePath;
+  }
 
   async connect(): Promise<void> {
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
