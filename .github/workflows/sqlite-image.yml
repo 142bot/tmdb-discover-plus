@@ -12,11 +12,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Native arm64 runner (free for public repos). QEMU emulation of the
+    # better-sqlite3 native compile crashed with SIGILL (exit 132).
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-
-      - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
 
